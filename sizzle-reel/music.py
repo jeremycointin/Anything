@@ -1,4 +1,4 @@
-"""Generates music.wav: a 100s, 120 BPM synthwave bed cut to the reel's scene timing.
+"""Generates music.wav: a 110s, 120 BPM synthwave bed cut to the reel's scene timing.
 
 Every scene boundary in index.html lands on a 2s bar, so the arrangement below
 uses the same timestamps (seconds) as the SCENES / WIPES tables there.
@@ -7,7 +7,7 @@ import wave
 import numpy as np
 
 SR = 44100
-DUR = 100.0
+DUR = 110.0
 BEAT = 0.5  # 120 BPM
 N = int(SR * DUR)
 t_all = np.arange(N) / SR
@@ -110,9 +110,9 @@ def chord_at(t):
 
 
 # Arrangement windows (seconds)
-DRUMS_FULL = [(7, 53), (57, 85), (89, 96)]
+DRUMS_FULL = [(7, 63), (67, 95), (99, 106)]
 KICK_ONLY = [(2.8, 7)]
-BREAKS = [(55, 57), (85, 89)]
+BREAKS = [(65, 67), (95, 99)]
 
 
 def inside(t, spans):
@@ -125,7 +125,7 @@ for b in range(bars):
     root, notes = chord_at(t0)
     # pad — always on, softer in the intro
     pad_gain = 0.10 if t0 < 2.8 else 0.075
-    if t0 >= 96:
+    if t0 >= 106:
         pad_gain = 0.0
     for k, f in enumerate(notes):
         for d, pan in ((-0.004, -0.6), (0.004, 0.6)):
@@ -150,7 +150,7 @@ for b in range(bars):
                 s += np.sin(2 * np.pi * f / 2 * np.arange(len(s)) / SR) * env(len(s), 0.005, 0.2) * 0.8
                 add_st(tb + e8, s, 0.22)
         # arpeggio lead in the second half (side projects onward)
-        if inside(tb, [(57, 85), (89, 96)]):
+        if inside(tb, [(67, 95), (99, 106)]):
             seq = [notes[0] * 2, notes[1] * 2, notes[2] * 2, notes[1] * 2]
             for i, s16 in enumerate((0, 0.125, 0.25, 0.375)):
                 f = seq[(beat * 4 + i) % 4]
@@ -191,21 +191,21 @@ def whoosh():
 
 add_st(0.0, riser(2.8), 0.35, verb=0.3)
 add_st(2.8, impact(), 0.9, verb=0.4)
-for b in (7, 15, 25, 35, 45, 55, 75, 89):  # matches WIPES in index.html
+for b in (7, 15, 25, 35, 45, 55, 65, 85, 99):  # matches WIPES in index.html
     add_st(b - 0.4, whoosh(), 0.5, verb=0.3)
-for b in (57, 61, 65, 69, 73):  # project cuts: lighter tick
+for b in (67, 71, 75, 79, 83):  # project cuts: lighter tick
     add_st(b - 0.4, whoosh(), 0.2)
-add_st(53.0, riser(2.0), 0.3)
-add_st(55.0, impact(), 0.55, verb=0.5)
-add_st(85.0, impact(), 0.6, verb=0.5)
-add_st(87.0, riser(2.0), 0.35)
-add_st(89.0, impact(), 0.8, verb=0.4)
+add_st(63.0, riser(2.0), 0.3)
+add_st(65.0, impact(), 0.55, verb=0.5)
+add_st(95.0, impact(), 0.6, verb=0.5)
+add_st(97.0, riser(2.0), 0.35)
+add_st(99.0, impact(), 0.8, verb=0.4)
 # final chord rings out
 for f in (220.00, 261.63, 329.63, 440.0):
     s = saw(f, 4.0, harmonics=8) * env(int(4.0 * SR), 0.01, 1.6)
-    add_st(96.0, s, 0.08, verb=0.8)
-add_st(96.0, K, 0.9)
-add_st(96.0, impact(), 0.5, verb=0.5)
+    add_st(106.0, s, 0.08, verb=0.8)
+add_st(106.0, K, 0.9)
+add_st(106.0, impact(), 0.5, verb=0.5)
 
 # ---------- reverb (FFT convolution with a decaying-noise impulse) ----------
 ir_n = int(2.2 * SR)

@@ -16,7 +16,7 @@ const out = args.find(a => a.endsWith('.mp4')) || 'jeremy-cointin-sizzle.mp4';
 const fi = args.indexOf('--frames');
 const stills = fi >= 0 ? args[fi + 1].split(',').map(Number) : null;
 
-const types = { '.html': 'text/html', '.png': 'image/png', '.wav': 'audio/wav' };
+const types = { '.html': 'text/html', '.png': 'image/png', '.jpg': 'image/jpeg', '.wav': 'audio/wav' };
 const server = http.createServer((req, res) => {
   const f = path.join(root, decodeURIComponent(req.url.split('?')[0]));
   if (!f.startsWith(root) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
@@ -42,7 +42,7 @@ if (stills) {
 } else {
   const total = Math.round(duration * FPS);
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
-    '-i', path.join(root, 'music.wav'), '-map', '0:v', '-map', '1:a',
+    '-i', path.join(root, 'soundtrack.wav'), '-map', '0:v', '-map', '1:a',
     '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k',
     '-shortest', '-movflags', '+faststart', path.join(root, out)], { stdio: ['pipe', 'inherit', 'inherit'] });
   const write = buf => new Promise(r => ff.stdin.write(buf) ? r() : ff.stdin.once('drain', r));
