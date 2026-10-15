@@ -416,7 +416,9 @@ function cogPath(cx, cy, R, toothH, hole, teeth, ang, baseHalf, tipHalf) {
   ctx.moveTo(cx + hole, cy); ctx.arc(cx, cy, hole, 0, Math.PI * 2, true);
 }
 // Proportions measured from the team image: photos ride the tooth tips, 8 teeth, bottom tooth empty.
-function teamCog(cx, cy, S, ang, photosIn, color = C.ink) {
+const ME_DEG = 90; // the empty bottom tooth
+const slotPos = (cx, cy, S, ang) => [cx + Math.cos(ang + ME_DEG * Math.PI / 180) * 463 * S, cy + Math.sin(ang + ME_DEG * Math.PI / 180) * 463 * S];
+function teamCog(cx, cy, S, ang, photosIn, color = C.ink, me = 0) {
   const Rp = 463 * S;
   cogPath(cx, cy, 372 * S, 110 * S, 216 * S, 8, ang, 0.30, 0.21);
   ctx.fillStyle = color; ctx.fill('evenodd');
@@ -431,6 +433,11 @@ function teamCog(cx, cy, S, ang, photosIn, color = C.ink) {
     ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(x, y, r + 7 * S, 0, Math.PI * 2); ctx.fill();
     if (TEAM[k].naturalWidth) ctx.drawImage(TEAM[k], x - r, y - r, r * 2, r * 2);
     ctx.restore();
+  }
+  if (me > 0) {
+    const [x, y] = slotPos(cx, cy, S, ang), r = 118 * S * me;
+    ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(x, y, r + 7 * S, 0, Math.PI * 2); ctx.fill();
+    if (headshot.naturalWidth) ctx.drawImage(headshot, x - r, y - r, r * 2, r * 2);
   }
 }
 
@@ -759,7 +766,7 @@ function sRemote(lt) {
 }
 
 // 79.9–90.0: the cog — quote, team gear, arrow, Jeremy slots into the center
-const GEAR = { x: 760, y: 540, S: 0.70 };
+const GEAR = { x: 920, y: 540, S: 0.70, spin: 1.14 }; // spin offset puts the open tooth on the left for the arrow beat
 function sGear(lt, t) {
   // part 1: the quote, with a lonely little cog spinning by itself
   if (lt < 4.9) {
@@ -778,25 +785,29 @@ function sGear(lt, t) {
   }
   // part 2: the team cog
   const l = lt - 4.9;
-  const ang = l * 0.16;
+  const ang = l * 0.16 + GEAR.spin;
   const k = eOutExpo(p(l, 0, 0.9));
   const S = GEAR.S * lerp(0.6, 1, k);
+  const landed = t >= 88.9;
+  const land = landed ? eBack(p(t, 88.9, 89.3)) : 0;
   ctx.save(); ctx.globalAlpha = k;
-  teamCog(GEAR.x, GEAR.y, S, ang - (1 - k) * 1.2, i => eBack(p(l, 0.3 + i * 0.12, 0.7 + i * 0.12)));
+  teamCog(GEAR.x, GEAR.y, S, ang - (1 - k) * 1.2, i => eBack(p(l, 0.3 + i * 0.12, 0.7 + i * 0.12)), C.ink, landed ? lerp(1.15, 1, land) : 0);
   ctx.restore();
-  const hole = 216 * GEAR.S;
-  // pulsing dashed ring on the empty center
-  const landed = p(t, 88.9, 89.0) >= 1;
+  const pr = 118 * GEAR.S; // team photo radius on the cog
+  const [mx, my] = slotPos(GEAR.x, GEAR.y, GEAR.S, ang);
+  // pulsing dashed placeholder on the open tooth
   if (!landed) {
-    ctx.save(); ctx.strokeStyle = C.white; ctx.lineWidth = 4; ctx.setLineDash([14, 12]); ctx.lineDashOffset = -l * 30;
-    ctx.globalAlpha = k * (0.5 + 0.5 * Math.sin(l * 5));
-    ctx.beginPath(); ctx.arc(GEAR.x, GEAR.y, hole - 14, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.strokeStyle = C.white; ctx.lineWidth = 4; ctx.setLineDash([12, 10]); ctx.lineDashOffset = -l * 30;
+    ctx.globalAlpha = k * (0.55 + 0.45 * Math.sin(l * 5));
+    ctx.beginPath(); ctx.arc(mx, my, pr + 5, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
   }
-  // arrow + note
+  // arrow + note (note sits bottom-left, arrow follows the open tooth as the cog turns)
   const ak = p(t, 86.45, 87.2);
   if (ak > 0) {
-    const sx = 1330, sy = 330, ex = GEAR.x + hole * 0.45, ey = GEAR.y - hole * 0.35;
-    const c1x = 1280, c1y = 560, c2x = 1010, c2y = 640;
+    const sx = 300, sy = 400;
+    const dx = mx - sx, dy = my - sy, dl = Math.hypot(dx, dy);
+    const ex = mx - dx / dl * (pr + 26), ey = my - dy / dl * (pr + 26);
+    const c1x = sx + 10, c1y = sy + 150, c2x = ex - 150, c2y = ey + 10;
     const bez = u => [Math.pow(1 - u, 3) * sx + 3 * Math.pow(1 - u, 2) * u * c1x + 3 * (1 - u) * u * u * c2x + u * u * u * ex,
       Math.pow(1 - u, 3) * sy + 3 * Math.pow(1 - u, 2) * u * c1y + 3 * (1 - u) * u * u * c2y + u * u * u * ey];
     const e = eInOut(ak);
@@ -810,30 +821,28 @@ function sGear(lt, t) {
     ctx.restore();
     const nk = eBack(p(t, 86.3, 86.8));
     const fitted = t > 89.0;
-    ctx.save(); ctx.translate(1520, 240); ctx.rotate(-0.05); ctx.scale(nk, nk);
-    rrect(-300, -80, 600, 150, 22); ctx.fillStyle = C.lime; ctx.fill();
-    text(fitted ? 'Perfect fit.' : 'Look, I fit', 0, fitted ? 22 : -8, { size: 60, weight: 900, color: C.ink, align: 'center' });
-    if (!fitted) text('right in here.', 0, 52, { size: 46, weight: 800, color: C.ink, align: 'center' });
+    ctx.save(); ctx.translate(sx + 10, sy - 110); ctx.rotate(-0.04); ctx.scale(nk, nk);
+    rrect(-270, -75, 540, 140, 22); ctx.fillStyle = C.lime; ctx.fill();
+    text(fitted ? 'Perfect fit.' : 'Look, I fit', 0, fitted ? 20 : -8, { size: 56, weight: 900, color: C.ink, align: 'center' });
+    if (!fitted) text('right in here.', 0, 48, { size: 42, weight: 800, color: C.ink, align: 'center' });
     ctx.restore();
   }
-  // headshot flies from the narrator window into the empty center
+  // headshot flies from the narrator window onto the open tooth
   const fk = p(t, 88.1, 88.9);
-  if (fk > 0) {
+  if (fk > 0 && !landed) {
     const e = eInOut(fk);
     const sx = CORNER.x + CORNER.w / 2, sy = CORNER.y + CORNER.h / 2;
-    const x = lerp(sx, GEAR.x, e), y = lerp(sy, GEAR.y, e) - Math.sin(e * Math.PI) * 220;
-    const land = t > 88.9 ? eBack(p(t, 88.9, 89.3)) : 1;
-    const r = lerp(90, hole - 8, e) * (t > 88.9 ? lerp(1.12, 1, land) : 1);
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 30;
-    ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(x, y, r + 8, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    const x = lerp(sx, mx, e), y = lerp(sy, my, e) - Math.sin(e * Math.PI) * 260;
+    const r = lerp(110, pr, e);
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 30;
+    ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(x, y, r + 7, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
     if (headshot.naturalWidth) ctx.drawImage(headshot, x - r, y - r, r * 2, r * 2);
     ctx.restore();
-    if (t > 88.9) { // landing ripple
-      const q = p(t, 88.9, 89.6);
-      ctx.save(); ctx.strokeStyle = C.lime; ctx.lineWidth = 8 * (1 - q); ctx.globalAlpha = 1 - q;
-      ctx.beginPath(); ctx.arc(GEAR.x, GEAR.y, hole + q * 260, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-    }
+  }
+  if (landed) { // landing ripple around the new team member
+    const q = p(t, 88.9, 89.6);
+    ctx.save(); ctx.strokeStyle = C.lime; ctx.lineWidth = 8 * (1 - q); ctx.globalAlpha = 1 - q;
+    ctx.beginPath(); ctx.arc(mx, my, pr + 8 + q * 120, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
   }
 }
 
@@ -843,9 +852,7 @@ function sOutro(lt, t) {
   const l = t - 96.2;
   const k = eOutExpo(p(l, 0, 0.8));
   ctx.save(); ctx.globalAlpha = k;
-  teamCog(560, 540, 0.62, (t - 79) * 0.16, null);
-  ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(560, 540, 216 * 0.62 - 2, 0, Math.PI * 2); ctx.fill();
-  if (headshot.naturalWidth) { const r = 216 * 0.62 - 8; ctx.drawImage(headshot, 560 - r, 540 - r, r * 2, r * 2); }
+  teamCog(560, 540, 0.62, (t - 84.8) * 0.16 + GEAR.spin, null, C.ink, 1);
   ctx.restore();
   reveal("Let's make something", 1080, 330, l, 0.2, { size: 70, weight: 900 });
   reveal('happy together.', 1080, 410, l, 0.35, { size: 70, weight: 900, color: C.lime });
