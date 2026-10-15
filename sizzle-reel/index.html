@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jeremy Cointin Sizzle Reel</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; }
+  body { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; font-family: Inter, sans-serif; color: #ccc; }
+  canvas { width: min(100vw, calc(100vh * 16 / 9 - 60px)); aspect-ratio: 16 / 9; display: block; }
+  #ui { display: flex; gap: 12px; align-items: center; }
+  #ui button { background: #22D3EE; border: 0; padding: 8px 18px; font-weight: 700; border-radius: 6px; cursor: pointer; }
+  body.render #ui { display: none; }
+  body.render canvas { width: 1920px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="ui"><button id="play">Play with sound</button><span id="clock">0.0s</span></div>
+<audio id="music" src="music.wav" preload="auto"></audio>
+<script>
+'use strict';
+const W = 1920, H = 1080, DURATION = 100;
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const C = {
+  bg: '#060A18', bg2: '#0D1430', cyan: '#22D3EE', orange: '#FF7A2F', pink: '#FF3D7F',
+  white: '#F3F6FB', dim: '#8A94B8', green: '#34D399', purple: '#8B5CF6', yellow: '#FFD23F'
+};
+const DISP = '"Inter Display", Inter, sans-serif';
+const MONO = '"DejaVu Sans Mono", monospace';
+
+const photo = new Image();
+photo.src = 'assets/jeremy_cut.png';
+
+// ---------- math helpers ----------
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const p = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = k => 1 - Math.pow(1 - k, 3);
+const eOutExpo = k => k >= 1 ? 1 : 1 - Math.pow(2, -10 * k);
+const eInOut = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const eBack = k => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ---------- drawing helpers ----------
+function font(size, weight = 800, family = DISP, ls = 0) {
+  ctx.font = `${weight} ${size}px ${family}`;
+  ctx.letterSpacing = ls + 'px';
+}
+function text(str, x, y, o = {}) {
+  ctx.save();
+  font(o.size || 64, o.weight || 800, o.font || DISP, o.ls || 0);
+  ctx.textAlign = o.align || 'left';
+  ctx.textBaseline = o.base || 'alphabetic';
+  ctx.globalAlpha *= (o.alpha ?? 1);
+  if (o.glow) { ctx.shadowColor = o.glow; ctx.shadowBlur = o.glowSize || 30; }
+  if (o.stroke) { ctx.lineWidth = o.lineWidth || 3; ctx.strokeStyle = o.stroke; ctx.strokeText(str, x, y); }
+  if (o.color !== 'none') { ctx.fillStyle = o.color || C.white; ctx.fillText(str, x, y); }
+  ctx.restore();
+}
+function measure(str, size, weight = 800, family = DISP, ls = 0) {
+  ctx.save(); font(size, weight, family, ls); const w = ctx.measureText(str).width; ctx.restore(); return w;
+}
+// Word-by-word rising reveal. colors: optional array of per-word colors.
+function reveal(str, x, y, lt, start, o = {}) {
+  const size = o.size || 64, weight = o.weight || 800, fam = o.font || DISP, ls = o.ls || 0;
+  const stagger = o.stagger ?? 0.06, dur = o.dur ?? 0.55, dy = o.dy ?? size * 0.5;
+  ctx.save();
+  font(size, weight, fam, ls);
+  const words = str.split(' ');
+  const space = ctx.measureText(' ').width;
+  const widths = words.map(w => ctx.measureText(w).width);
+  const total = widths.reduce((a, b) => a + b, 0) + space * (words.length - 1);
+  let cx = o.align === 'center' ? x - total / 2 : o.align === 'right' ? x - total : x;
+  ctx.textAlign = 'left';
+  words.forEach((w, i) => {
+    const k = eOut(p(lt, start + i * stagger, start + i * stagger + dur));
+    if (k > 0) {
+      ctx.save();
+      ctx.globalAlpha *= k * (o.alpha ?? 1);
+      if (o.glow) { ctx.shadowColor = o.glow; ctx.shadowBlur = 30; }
+      ctx.fillStyle = (o.colors && o.colors[i]) || o.color || C.white;
+      ctx.fillText(w, cx, y + (1 - k) * dy);
+      ctx.restore();
+    }
+    cx += widths[i] + space;
+  });
+  ctx.restore();
+  return total;
+}
+function rrect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function glowDot(x, y, r, color, a = 1) {
+  ctx.save(); ctx.globalAlpha *= a;
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
+  g.addColorStop(0, color); g.addColorStop(0.25, color + '88'); g.addColorStop(1, color + '00');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, r * 0.6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function label(str, x, y, color = C.cyan, a = 1) {
+  text(str, x, y, { size: 26, weight: 700, font: MONO, color, ls: 6, alpha: a });
+}
+function chip(str, x, y, color, a = 1) {
+  ctx.save(); ctx.globalAlpha *= a;
+  font(26, 600, MONO, 1);
+  const w = ctx.measureText(str).width + 44;
+  rrect(x, y - 34, w, 50, 25);
+  ctx.fillStyle = color + '22'; ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = color; ctx.textBaseline = 'middle'; ctx.fillText(str, x + 22, y - 8);
+  ctx.restore();
+  return w;
+}
+function drawPhoto(cx, bottom, h, a = 1) {
+  if (!photo.complete || !photo.naturalWidth) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  const s = h / 674; // subject spans y 26..700 in the source
+  const w = photo.naturalWidth * s;
+  // subject's horizontal center is ~357px in the 700px source
+  ctx.drawImage(photo, cx - 357 * s, bottom - 700 * s, w, 700 * s);
+  ctx.restore();
+}
+
+// ---------- background ----------
+const parts = (() => { const r = rng(7); return Array.from({ length: 70 }, () => ({ x: r() * W, y: r() * H, s: 0.5 + r() * 2.2, v: 6 + r() * 22, ph: r() * 6.28 })); })();
+function background(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#040712'); g.addColorStop(0.6, C.bg); g.addColorStop(1, C.bg2);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // drifting color blobs
+  const blob = (x, y, r, col, a) => { const rg = ctx.createRadialGradient(x, y, 0, x, y, r); rg.addColorStop(0, col); rg.addColorStop(1, col.slice(0, 7) + '00'); ctx.globalAlpha = a; ctx.fillStyle = rg; ctx.fillRect(x - r, y - r, r * 2, r * 2); ctx.globalAlpha = 1; };
+  blob(W * 0.15 + Math.sin(t * 0.21) * 160, H * 0.2 + Math.cos(t * 0.17) * 90, 700, '#1B3A8A', 0.35);
+  blob(W * 0.85 + Math.cos(t * 0.19) * 160, H * 0.8 + Math.sin(t * 0.23) * 90, 650, '#7A2A5E', 0.25);
+  // perspective grid floor
+  ctx.save();
+  ctx.strokeStyle = 'rgba(34,211,238,0.10)'; ctx.lineWidth = 1.5;
+  const horizon = H * 0.62, vx = W / 2;
+  for (let i = -16; i <= 16; i++) { ctx.beginPath(); ctx.moveTo(vx + i * 40, horizon); ctx.lineTo(vx + i * 260, H); ctx.stroke(); }
+  const off = (t * 0.6) % 1;
+  for (let i = 0; i < 12; i++) { const k = Math.pow((i + off) / 12, 2.2); const y = horizon + (H - horizon) * k; ctx.globalAlpha = k; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  ctx.restore();
+  const fade = ctx.createLinearGradient(0, horizon - 10, 0, horizon + 140);
+  fade.addColorStop(0, C.bg); fade.addColorStop(1, 'rgba(6,10,24,0)');
+  ctx.fillStyle = fade; ctx.fillRect(0, horizon - 10, W, 150);
+  // particles
+  for (const q of parts) {
+    const y = ((q.y - t * q.v) % H + H) % H;
+    ctx.globalAlpha = 0.25 + 0.25 * Math.sin(t * 2 + q.ph);
+    ctx.fillStyle = q.s > 2 ? C.orange : C.cyan;
+    ctx.fillRect(q.x + Math.sin(t * 0.5 + q.ph) * 20, y, q.s, q.s);
+  }
+  ctx.globalAlpha = 1;
+}
+function vignette() {
+  const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 1.05);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.65)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+
+// =====================================================================
+// SCENES — times in seconds; 120 BPM so every cut lands on a bar (2s)
+// =====================================================================
+
+// 1. Boot + title slam
+function sIntro(lt) {
+  const termA = 1 - p(lt, 2.5, 2.8);
+  if (termA > 0) {
+    ctx.save(); ctx.globalAlpha = termA;
+    const x = 560, y0 = 420, lh = 62;
+    const type = (s, a, b) => s.slice(0, Math.floor(s.length * p(lt, a, b)));
+    const cursor = Math.floor(lt * 4) % 2 ? '' : '█';
+    text('$ ' + type('whoami', 0.15, 0.55), x, y0, { size: 40, font: MONO, weight: 400, color: C.cyan });
+    if (lt > 0.65) text('jeremy_cointin', x, y0 + lh, { size: 40, font: MONO, weight: 400, color: C.white });
+    if (lt > 0.85) text('$ ' + type('npm run sizzle-reel', 0.85, 1.4), x, y0 + lh * 2, { size: 40, font: MONO, weight: 400, color: C.cyan });
+    if (lt > 1.5) {
+      text('▸ compiling 14 years of code…', x, y0 + lh * 3, { size: 40, font: MONO, weight: 400, color: C.orange });
+      const k = eInOut(p(lt, 1.6, 2.4));
+      ctx.strokeStyle = C.dim; ctx.lineWidth = 2; ctx.strokeRect(x, y0 + lh * 3 + 30, 800, 26);
+      ctx.fillStyle = C.orange; ctx.fillRect(x + 4, y0 + lh * 3 + 34, 792 * k, 18);
+      text(Math.round(k * 100) + '%', x + 820, y0 + lh * 3 + 52, { size: 30, font: MONO, weight: 400, color: C.white });
+    } else if (lt < 1.5) {
+      text(cursor, x + measure('$ npm run sizzle-reel', 40, 400, MONO) + 8, y0 + lh * (lt > 0.85 ? 2 : 0), { size: 40, font: MONO, weight: 400, color: C.cyan });
+    }
+    ctx.restore();
+  }
+  if (lt < 2.8) return;
+  const t2 = lt - 2.8;
+  // title letters slam in
+  const slam = (word, y, size, color, start) => {
+    font(size, 900, DISP, 8);
+    const letters = word.split('');
+    const widths = letters.map(l => ctx.measureText(l).width);
+    const total = widths.reduce((a, b) => a + b, 0);
+    let x = W / 2 - total / 2;
+    letters.forEach((l, i) => {
+      const k = p(t2, start + i * 0.045, start + i * 0.045 + 0.35);
+      if (k > 0) {
+        const s = lerp(2.6, 1, eOutExpo(k));
+        ctx.save();
+        ctx.translate(x + widths[i] / 2, y);
+        ctx.scale(s, s);
+        ctx.globalAlpha = clamp(k * 3);
+        font(size, 900, DISP, 8);
+        ctx.textAlign = 'center';
+        if (t2 < 0.9) { // chromatic split during the slam
+          const d = (1 - p(t2, 0.3, 0.9)) * 10;
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = 'rgba(255,61,127,0.7)'; ctx.fillText(l, -d, 0);
+          ctx.fillStyle = 'rgba(34,211,238,0.7)'; ctx.fillText(l, d, 0);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        ctx.fillStyle = color; ctx.fillText(l, 0, 0);
+        ctx.restore();
+      }
+      x += widths[i];
+    });
+  };
+  const drift = Math.max(0, t2 - 1) * 4;
+  ctx.save(); ctx.translate(0, -drift);
+  slam('JEREMY', 500, 230, C.white, 0.0);
+  slam('COINTIN', 720, 230, C.orange, 0.2);
+  ctx.restore();
+  const k = eOut(p(t2, 1.0, 1.6));
+  ctx.save(); ctx.globalAlpha = k;
+  ctx.fillStyle = C.cyan; ctx.fillRect(W / 2 - 420 * k, 790 - drift, 840 * k, 3);
+  ctx.restore();
+  reveal('WEB DEVELOPER  ·  IDEA MACHINE  ·  AI WORKFLOW BUILDER', W / 2, 870 - drift, t2, 1.2, { size: 34, weight: 700, font: MONO, color: C.cyan, align: 'center', ls: 4, stagger: 0.08 });
+  // impact flash
+  const fl = 1 - p(t2, 0, 0.35);
+  if (fl > 0) { ctx.fillStyle = `rgba(255,255,255,${fl * 0.55})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// 2. Photo + who
+function sWho(lt) {
+  const k = eOut(p(lt, 0, 0.9));
+  const cx = lerp(2200, 1390, k), zoom = 1 + lt * 0.012;
+  // halo
+  ctx.save();
+  const g = ctx.createRadialGradient(1390, 520, 50, 1390, 520, 520);
+  g.addColorStop(0, 'rgba(255,122,47,0.45)'); g.addColorStop(0.5, 'rgba(34,211,238,0.12)'); g.addColorStop(1, 'rgba(34,211,238,0)');
+  ctx.globalAlpha = k; ctx.fillStyle = g; ctx.fillRect(800, 0, 1120, H);
+  ctx.translate(1390, 520); ctx.rotate(lt * 0.25);
+  ctx.strokeStyle = 'rgba(34,211,238,0.55)'; ctx.lineWidth = 3; ctx.setLineDash([24, 18]);
+  ctx.beginPath(); ctx.arc(0, 0, 400, 0, Math.PI * 2); ctx.stroke();
+  ctx.rotate(-lt * 0.6); ctx.strokeStyle = 'rgba(255,122,47,0.5)'; ctx.setLineDash([4, 14]);
+  ctx.beginPath(); ctx.arc(0, 0, 450, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+  drawPhoto(cx, 1080 + 20, 980 * zoom, k);
+  label('// HELLO, WORLD', 140, 250, C.cyan, eOut(p(lt, 0.3, 0.8)));
+  reveal("I'm Jeremy.", 140, 380, lt, 0.4, { size: 130, weight: 900 });
+  reveal('A St. Louis web developer', 140, 470, lt, 0.9, { size: 54, weight: 600, color: C.dim });
+  reveal('who has been shipping', 140, 540, lt, 1.2, { size: 54, weight: 600, color: C.dim });
+  reveal('since 2012.', 140, 610, lt, 1.5, { size: 54, weight: 700, color: C.white });
+  const yrs = Math.round(lerp(0, 14, eOut(p(lt, 2.6, 4.0))));
+  if (lt > 2.6) {
+    text(String(yrs), 140, 830, { size: 220, weight: 900, color: C.orange, alpha: p(lt, 2.6, 2.9), glow: 'rgba(255,122,47,0.5)' });
+    reveal('YEARS', 140 + measure('14', 220, 900) + 30, 740, lt, 3.0, { size: 44, weight: 800, font: MONO, color: C.white, ls: 8 });
+    reveal('of real-world code.', 140 + measure('14', 220, 900) + 30, 810, lt, 3.2, { size: 44, weight: 600, color: C.dim });
+  }
+  reveal('Self-taught. Stack Overflow & W3Schools were my university.', 140, 930, lt, 4.6, { size: 34, weight: 500, color: C.cyan, stagger: 0.04 });
+}
+
+// 3. Timeline
+function sJourney(lt) {
+  label('// THE JOURNEY', 140, 170, C.cyan, eOut(p(lt, 0, 0.4)));
+  reveal('From lead dev to a studio of one.', 140, 270, lt, 0.1, { size: 84, weight: 900 });
+  const x0 = 200, x1 = 1720, y = 610;
+  const k = eInOut(p(lt, 0.6, 6.2));
+  ctx.save();
+  ctx.strokeStyle = 'rgba(138,148,184,0.35)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+  const lg = ctx.createLinearGradient(x0, 0, x1, 0); lg.addColorStop(0, C.cyan); lg.addColorStop(1, C.orange);
+  ctx.strokeStyle = lg; ctx.lineWidth = 6; ctx.shadowColor = C.cyan; ctx.shadowBlur = 20;
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(lerp(x0, x1, k), y); ctx.stroke();
+  ctx.restore();
+  glowDot(lerp(x0, x1, k), y, 10, C.white, p(lt, 0.6, 0.8) * (1 - p(lt, 6.2, 6.6)));
+  const stops = [
+    { f: 0.0, year: '2009', title: 'Taught myself to code', sub: 'Stack Overflow + W3Schools', up: true, col: C.cyan },
+    { f: 0.33, year: '2012', title: 'Lead Developer · Studio 2108', sub: '5 years · Great Forest Park Balloon Race', up: false, col: C.cyan },
+    { f: 0.66, year: '2017', title: 'Launched STL CodeScape', sub: 'Freelance dev for agencies across STL', up: true, col: C.orange },
+    { f: 1.0, year: 'NEXT', title: 'Your team?', sub: "Let's talk.", up: false, col: C.orange },
+  ];
+  stops.forEach((s, i) => {
+    const sx = lerp(x0, x1, s.f);
+    const a = eBack(p(k, s.f - 0.02, s.f + 0.08));
+    if (k < s.f - 0.02) return;
+    ctx.save();
+    ctx.fillStyle = C.bg; ctx.strokeStyle = s.col; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(sx, y, 20 * a, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    if (i === 3) { ctx.globalAlpha = 0.5 * (1 - (lt * 1.2 % 1)); ctx.beginPath(); ctx.arc(sx, y, 20 + (lt * 1.2 % 1) * 40, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.restore();
+    const al = clamp(a);
+    const dir = s.up ? -1 : 1;
+    const align = i === 0 ? 'left' : i === 3 ? 'right' : 'center';
+    const tx = i === 0 ? sx - 20 : i === 3 ? sx + 20 : sx;
+    const base = y + dir * (s.up ? 70 : 110) + (1 - al) * 30 * dir;
+    text(s.year, tx, base + (s.up ? -110 : 0), { size: 64, weight: 900, color: s.col, align, alpha: al });
+    text(s.title, tx, base + (s.up ? -50 : 60), { size: 36, weight: 700, color: C.white, align, alpha: al });
+    text(s.sub, tx, base + (s.up ? 0 : 108), { size: 28, weight: 500, color: C.dim, align, alpha: al });
+  });
+}
+
+// 4. Track record
+function sRecord(lt) {
+  label('// THE TRACK RECORD', 140, 170, C.cyan, eOut(p(lt, 0, 0.4)));
+  reveal('Trusted by the agencies behind the brands.', 140, 270, lt, 0.1, { size: 76, weight: 900, stagger: 0.05 });
+  const stats = [
+    { n: 80, suf: '+', l1: 'websites built', l2: '& maintained', col: C.orange },
+    { n: 40, suf: '+', l1: 'custom WordPress themes', l2: 'for a single agency', col: C.cyan },
+    { n: 10, suf: '', l1: 'agencies & studios', l2: 'on the client list', col: C.pink },
+  ];
+  stats.forEach((s, i) => {
+    const x = 140 + i * 580, st = 0.5 + i * 0.25;
+    const a = eOut(p(lt, st, st + 0.5));
+    if (a <= 0) return;
+    const n = Math.round(s.n * eOut(p(lt, st, st + 1.6)));
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.fillStyle = s.col; ctx.fillRect(x, 360, 6, 250 * a);
+    ctx.restore();
+    text(n + s.suf, x + 40, 520 + (1 - a) * 40, { size: 170, weight: 900, color: s.col, alpha: a });
+    text(s.l1, x + 44, 570, { size: 34, weight: 700, alpha: a });
+    text(s.l2, x + 44, 612, { size: 34, weight: 500, color: C.dim, alpha: a });
+  });
+  // tickers
+  const a = eOut(p(lt, 1.6, 2.4));
+  const row = (items, y, speed, o) => {
+    ctx.save(); ctx.globalAlpha = a;
+    font(o.size, o.weight, o.font, o.ls || 0);
+    const sep = '   ✦   ';
+    const str = items.join(sep) + sep;
+    const w = ctx.measureText(str).width;
+    let x = -((lt * speed) % w + w) % w;
+    if (speed < 0) x = ((lt * -speed) % w) - w;
+    ctx.fillStyle = o.color;
+    for (; x < W; x += w) ctx.fillText(str, x, y);
+    ctx.restore();
+  };
+  ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.globalAlpha = a; ctx.fillRect(0, 700, W, 250); ctx.restore();
+  row(['Spoke Marketing', 'Elasticity', 'Verve Marketing Group', 'Lelander', 'Steady Rain', 'Werremeyer', 'BlankFactor', 'Digital Strike', 'RaisingSails', 'Studio 2108'], 800, 140, { size: 56, weight: 800, font: DISP, color: C.white });
+  row(['husk.com', 'medibeacon.com', 'dynaquip.com', 'watercop.com', 'goelastic.com', 'broilmaster.com', 'skicamp.com', 'terrasource.com', 'pretiumpkg.com', 'flylouisville.com', 'copeplastics.com', 'simeiosolutions.com'], 900, -110, { size: 38, weight: 400, font: MONO, color: C.cyan });
+}
+
+// 5. Toolkit + wireframe
+function sToolkit(lt) {
+  label('// THE TOOLKIT', 140, 170, C.cyan, eOut(p(lt, 0, 0.4)));
+  reveal('Custom WordPress. Private plugins.', 140, 270, lt, 0.1, { size: 72, weight: 900, stagger: 0.05 });
+  reveal('And 3D on the web.', 140, 355, lt, 0.5, { size: 72, weight: 900, color: C.orange });
+  const tiles = ['WordPress', 'PHP', 'JavaScript', 'jQuery', 'CSS', 'Git', 'Three.js', 'Canvas', 'A-Frame VR', 'Photoshop', 'Illustrator', 'Custom Plugins'];
+  const cols = [C.cyan, C.orange, C.yellow, C.cyan, C.pink, C.orange, C.green, C.yellow, C.purple, C.cyan, C.orange, C.pink];
+  tiles.forEach((tname, i) => {
+    const c = i % 3, r = Math.floor(i / 3);
+    const x = 140 + c * 360, y = 430 + r * 130;
+    const st = 0.9 + i * 0.09;
+    const a = eBack(p(lt, st, st + 0.45));
+    if (a <= 0) return;
+    ctx.save();
+    ctx.translate(x + 165, y + 55); ctx.scale(a, a); ctx.translate(-165, -55);
+    ctx.globalAlpha = clamp(a);
+    rrect(0, 0, 330, 106, 16); ctx.fillStyle = 'rgba(20,28,60,0.85)'; ctx.fill();
+    ctx.strokeStyle = cols[i] + '99'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = cols[i]; ctx.beginPath(); ctx.arc(40, 53, 10, 0, Math.PI * 2); ctx.fill();
+    font(34, 700, DISP); ctx.fillStyle = C.white; ctx.textBaseline = 'middle'; ctx.fillText(tname, 66, 55);
+    ctx.restore();
+  });
+  // rotating wireframe — a nod to the Three.js / A-Frame work
+  const a = eOut(p(lt, 0.6, 1.4));
+  const cx = 1500, cy = 640, R = 260 * a;
+  const phi = (1 + Math.sqrt(5)) / 2;
+  const V = [[-1, phi, 0], [1, phi, 0], [-1, -phi, 0], [1, -phi, 0], [0, -1, phi], [0, 1, phi], [0, -1, -phi], [0, 1, -phi], [phi, 0, -1], [phi, 0, 1], [-phi, 0, -1], [-phi, 0, 1]];
+  const ay = lt * 0.7, ax = lt * 0.4;
+  const P = V.map(([x, y, z]) => {
+    let x1 = x * Math.cos(ay) + z * Math.sin(ay), z1 = -x * Math.sin(ay) + z * Math.cos(ay);
+    let y1 = y * Math.cos(ax) - z1 * Math.sin(ax), z2 = y * Math.sin(ax) + z1 * Math.cos(ax);
+    const s = R / 1.9 / (1 + z2 * 0.12);
+    return [cx + x1 * s, cy + y1 * s, z2];
+  });
+  ctx.save(); ctx.globalAlpha = a;
+  for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++) {
+    const d = Math.hypot(V[i][0] - V[j][0], V[i][1] - V[j][1], V[i][2] - V[j][2]);
+    if (Math.abs(d - 2) < 0.01) {
+      const depth = (P[i][2] + P[j][2]) / 2;
+      ctx.strokeStyle = depth > 0 ? 'rgba(255,122,47,0.9)' : 'rgba(34,211,238,0.45)';
+      ctx.lineWidth = depth > 0 ? 3 : 1.5;
+      ctx.beginPath(); ctx.moveTo(P[i][0], P[i][1]); ctx.lineTo(P[j][0], P[j][1]); ctx.stroke();
+    }
+  }
+  P.forEach(q => glowDot(q[0], q[1], 4, q[2] > 0 ? C.orange : C.cyan, 0.9));
+  ctx.restore();
+  text('three.js · canvas · webvr', cx, 990, { size: 28, font: MONO, weight: 400, color: C.dim, align: 'center', alpha: a, ls: 3 });
+}
+
+// 6. AI workflows
+function sAI(lt) {
+  label('// MODERN AI WORKFLOWS', 140, 170, C.cyan, eOut(p(lt, 0, 0.4)));
+  reveal('Wired end-to-end.', 140, 270, lt, 0.1, { size: 84, weight: 900 });
+  reveal('Working while you sleep.', 140, 360, lt, 0.4, { size: 84, weight: 900, color: C.orange });
+  const nodes = [
+    { t: 'Website', s: 'form / app', col: C.white },
+    { t: 'Zapier', s: 'trigger', col: C.orange },
+    { t: 'n8n', s: 'orchestrate', col: C.pink },
+    { t: 'AI Model', s: 'think', col: C.cyan },
+    { t: 'Google Apps', s: 'deliver', col: C.green },
+  ];
+  const y = 560, nw = 270, nh = 130, gap = (W - 280 - nw * 5) / 4;
+  const pos = nodes.map((n, i) => 140 + i * (nw + gap));
+  // edges + packets
+  nodes.forEach((n, i) => {
+    if (i === 4) return;
+    const st = 0.9 + i * 0.3;
+    const k = eOut(p(lt, st + 0.2, st + 0.6));
+    if (k <= 0) return;
+    const ax = pos[i] + nw, bx = pos[i + 1];
+    ctx.save();
+    ctx.strokeStyle = 'rgba(138,148,184,0.5)'; ctx.lineWidth = 3; ctx.setLineDash([10, 10]); ctx.lineDashOffset = -lt * 40;
+    ctx.beginPath(); ctx.moveTo(ax, y + nh / 2); ctx.lineTo(lerp(ax, bx, k), y + nh / 2); ctx.stroke();
+    ctx.restore();
+    if (lt > 2.4) for (let q = 0; q < 2; q++) {
+      const u = (lt * 0.9 + q * 0.5 + i * 0.17) % 1;
+      glowDot(lerp(ax, bx, u), y + nh / 2, 6, nodes[i + 1].col, p(lt, 2.4, 2.8));
+    }
+  });
+  nodes.forEach((n, i) => {
+    const st = 0.9 + i * 0.3;
+    const a = eBack(p(lt, st, st + 0.45));
+    if (a <= 0) return;
+    const x = pos[i];
+    const pulse = lt > 2.4 ? 0.5 + 0.5 * Math.sin(lt * 5 - i * 1.2) : 0;
+    ctx.save();
+    ctx.translate(x + nw / 2, y + nh / 2); ctx.scale(a, a); ctx.translate(-nw / 2, -nh / 2);
+    ctx.globalAlpha = clamp(a);
+    ctx.shadowColor = n.col; ctx.shadowBlur = 10 + pulse * 25;
+    rrect(0, 0, nw, nh, 20); ctx.fillStyle = 'rgba(16,22,50,0.95)'; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = n.col; ctx.lineWidth = 3; ctx.stroke();
+    font(42, 800, DISP); ctx.fillStyle = C.white; ctx.textAlign = 'center'; ctx.fillText(n.t, nw / 2, 62);
+    font(24, 400, MONO, 2); ctx.fillStyle = n.col; ctx.fillText(n.s, nw / 2, 100);
+    ctx.restore();
+  });
+  // extra credits
+  const chips = [['AI film projects', C.orange], ['Founder · AI Filmmakers of St. Louis', C.cyan], ['Game design', C.pink]];
+  let cx = 140;
+  ctx.save();
+  font(26, 600, MONO, 1);
+  const total = chips.reduce((s, c) => s + ctx.measureText(c[0]).width + 44, 0) + 30 * 2;
+  ctx.restore();
+  cx = W / 2 - total / 2;
+  chips.forEach(([s, col], i) => {
+    const a = eOut(p(lt, 4.6 + i * 0.25, 5.1 + i * 0.25));
+    ctx.save(); ctx.translate(0, (1 - a) * 30);
+    cx += chip(s, cx, 900, col, a) + 30;
+    ctx.restore();
+  });
+  reveal('Beyond the browser:', W / 2, 820, lt, 4.3, { size: 34, weight: 600, color: C.dim, align: 'center' });
+}
+
+// 7a. Side projects title (music drops out)
+function sFunTitle(lt) {
+  const k = eOutExpo(p(lt, 0, 0.6));
+  ctx.save();
+  ctx.translate(W / 2, H / 2); ctx.scale(lerp(1.3, 1, k), lerp(1.3, 1, k));
+  text('Off the clock?', 0, -40, { size: 120, weight: 900, color: C.white, align: 'center', alpha: k });
+  ctx.restore();
+  const k2 = eOutExpo(p(lt, 0.8, 1.2));
+  text('Still building.', W / 2, 640 + (1 - k2) * 40, { size: 120, weight: 900, color: C.orange, align: 'center', alpha: k2, glow: 'rgba(255,122,47,0.6)' });
+}
+
+// mini-app frame
+function browser(x, y, w, h, title, lt, scene) {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+  rrect(x, y, w, h, 18); ctx.fillStyle = '#111733'; ctx.fill();
+  ctx.restore();
+  ctx.save();
+  rrect(x, y, w, h, 18); ctx.clip();
+  ctx.fillStyle = '#1A2148'; ctx.fillRect(x, y, w, 54);
+  ['#FF5F57', '#FEBC2E', '#28C840'].forEach((c, i) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x + 30 + i * 28, y + 27, 8, 0, Math.PI * 2); ctx.fill(); });
+  rrect(x + 130, y + 12, w - 160, 30, 15); ctx.fillStyle = '#0C1030'; ctx.fill();
+  font(20, 400, MONO); ctx.fillStyle = C.dim; ctx.textBaseline = 'middle'; ctx.fillText(title, x + 150, y + 28);
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y + 54, w, h - 54); ctx.clip();
+  scene(x, y + 54, w, h - 54, lt);
+  ctx.restore();
+  ctx.restore();
+  ctx.save(); rrect(x, y, w, h, 18); ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+}
+function mapBase(x, y, w, h, bg, street, seed) {
+  ctx.fillStyle = bg; ctx.fillRect(x, y, w, h);
+  const r = rng(seed);
+  ctx.strokeStyle = street; ctx.lineWidth = 2;
+  for (let i = 0; i < 14; i++) { const yy = y + r() * h; ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + w, yy + (r() - 0.5) * 120); ctx.stroke(); }
+  for (let i = 0; i < 18; i++) { const xx = x + r() * w; ctx.beginPath(); ctx.moveTo(xx, y); ctx.lineTo(xx + (r() - 0.5) * 120, y + h); ctx.stroke(); }
+}
+function balloonScene(x, y, w, h, lt) {
+  mapBase(x, y, w, h, '#0E1D2C', 'rgba(120,160,200,0.18)', 3);
+  // Forest Park + river
+  ctx.fillStyle = 'rgba(52,211,153,0.25)'; ctx.beginPath(); ctx.ellipse(x + w * 0.25, y + h * 0.6, 170, 110, -0.2, 0, Math.PI * 2); ctx.fill();
+  text('FOREST PARK', x + w * 0.25, y + h * 0.6 + 8, { size: 20, font: MONO, weight: 700, color: 'rgba(52,211,153,0.9)', align: 'center', ls: 3 });
+  ctx.strokeStyle = 'rgba(34,130,238,0.5)'; ctx.lineWidth = 26; ctx.beginPath(); ctx.moveTo(x + w * 0.92, y); ctx.bezierCurveTo(x + w * 0.8, y + h * 0.4, x + w * 1.0, y + h * 0.6, x + w * 0.88, y + h); ctx.stroke();
+  const cols = [C.orange, C.pink, C.yellow, C.cyan, C.green, C.purple];
+  cols.forEach((col, i) => {
+    const sx = x + w * 0.25 + (i - 2.5) * 22, sy = y + h * 0.6;
+    const sp = i === 0 ? 1.15 : 0.8 + i * 0.07;
+    const k = clamp(lt / 4) * sp;
+    const bx = sx + k * w * 0.55 + Math.sin(lt * 1.3 + i) * 14;
+    const by = sy - k * h * (0.25 + i * 0.07) + Math.cos(lt * 1.1 + i) * 10;
+    ctx.save(); ctx.strokeStyle = col; ctx.globalAlpha = 0.6; ctx.setLineDash([6, 8]); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo((sx + bx) / 2, by + 60, bx, by); ctx.stroke(); ctx.restore();
+    const ring = (lt * 0.8 + i * 0.2) % 1;
+    ctx.save(); ctx.strokeStyle = col; ctx.globalAlpha = 1 - ring; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(bx, by, 14 + ring * 40, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    // balloon
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(bx, by - 18, 20, Math.PI * 0.85, Math.PI * 2.15); ctx.lineTo(bx, by + 8); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#C08040'; ctx.fillRect(bx - 5, by + 10, 10, 8);
+    if (i === 0) text('HARE', bx + 28, by - 20, { size: 18, font: MONO, weight: 700, color: C.orange });
+  });
+  ctx.fillStyle = Math.floor(lt * 2) % 2 ? '#FF3B3B' : '#7a1d1d';
+  ctx.beginPath(); ctx.arc(x + 34, y + 34, 9, 0, Math.PI * 2); ctx.fill();
+  text('LIVE · 6 BALLOONS TRACKED', x + 54, y + 42, { size: 22, font: MONO, weight: 700, color: C.white });
+}
+function scavengerScene(x, y, w, h, lt) {
+  mapBase(x, y, w, h, '#14182E', 'rgba(160,170,220,0.16)', 11);
+  const pts = [[0.12, 0.8], [0.3, 0.45], [0.52, 0.7], [0.7, 0.3], [0.88, 0.55]].map(([a, b]) => [x + a * w, y + b * h]);
+  const k = clamp((lt - 0.3) / 3.2);
+  const seg = k * (pts.length - 1);
+  ctx.save(); ctx.strokeStyle = 'rgba(34,211,238,0.35)'; ctx.lineWidth = 5; ctx.setLineDash([2, 14]); ctx.lineCap = 'round';
+  ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(...q) : ctx.moveTo(...q)); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.strokeStyle = C.cyan; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(...pts[0]);
+  for (let i = 1; i <= Math.floor(seg); i++) ctx.lineTo(...pts[i]);
+  const si = Math.min(Math.floor(seg), pts.length - 2), f = seg - si;
+  const cur = [lerp(pts[si][0], pts[si + 1][0], f), lerp(pts[si][1], pts[si + 1][1], f)];
+  ctx.lineTo(...cur); ctx.stroke(); ctx.restore();
+  let found = 0;
+  pts.forEach((q, i) => {
+    const done = seg >= i - 0.001;
+    if (done) found++;
+    ctx.save(); ctx.translate(q[0], q[1] - 30);
+    ctx.fillStyle = done ? C.green : C.orange;
+    ctx.beginPath(); ctx.arc(0, 0, 24, Math.PI, 0); ctx.lineTo(0, 34); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#0B0F25'; font(24, 900, DISP); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(done ? '✓' : String(i + 1), 0, 2);
+    ctx.restore();
+  });
+  glowDot(cur[0], cur[1], 9, C.cyan);
+  const r = (lt * 1.2) % 1;
+  ctx.save(); ctx.strokeStyle = C.cyan; ctx.globalAlpha = 1 - r; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cur[0], cur[1], 12 + r * 40, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+  rrect(x + 20, y + 20, 280, 50, 25); ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fill();
+  text(`CLUES FOUND  ${found}/5`, x + 42, y + 54, { size: 22, font: MONO, weight: 700, color: C.green });
+}
+function pumpkin(px, py, s) {
+  ctx.save(); ctx.translate(px, py); ctx.scale(s, s);
+  ctx.fillStyle = '#FF8A1F';
+  [-14, 0, 14].forEach(dx => { ctx.beginPath(); ctx.ellipse(dx, 0, 16, 20, 0, 0, Math.PI * 2); ctx.fill(); });
+  ctx.fillStyle = '#3C7A2A'; ctx.fillRect(-3, -28, 6, 10);
+  ctx.fillStyle = '#FFE26B';
+  ctx.beginPath(); ctx.moveTo(-14, -6); ctx.lineTo(-6, -6); ctx.lineTo(-10, -13); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(14, -6); ctx.lineTo(6, -6); ctx.lineTo(10, -13); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-14, 5); ctx.lineTo(14, 5); ctx.lineTo(8, 12); ctx.lineTo(0, 7); ctx.lineTo(-8, 12); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function spookScene(x, y, w, h, lt) {
+  mapBase(x, y, w, h, '#160C26', 'rgba(170,120,255,0.14)', 31);
+  // moon
+  const g = ctx.createRadialGradient(x + w - 110, y + 100, 10, x + w - 110, y + 100, 140);
+  g.addColorStop(0, 'rgba(255,240,200,0.9)'); g.addColorStop(0.35, 'rgba(255,240,200,0.25)'); g.addColorStop(1, 'rgba(255,240,200,0)');
+  ctx.fillStyle = g; ctx.fillRect(x + w - 260, y - 50, 300, 300);
+  ctx.fillStyle = '#FFF2C8'; ctx.beginPath(); ctx.arc(x + w - 110, y + 100, 44, 0, Math.PI * 2); ctx.fill();
+  // bats
+  for (let i = 0; i < 3; i++) {
+    const bx = x + ((lt * 120 + i * 260) % (w + 100)) - 50, by = y + 80 + i * 40 + Math.sin(lt * 4 + i) * 12;
+    const flap = Math.sin(lt * 18 + i) * 8;
+    ctx.fillStyle = '#05030A'; ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx - 14, by - 10 - flap, bx - 26, by - flap); ctx.quadraticCurveTo(bx - 14, by + 2, bx, by + 6); ctx.quadraticCurveTo(bx + 14, by + 2, bx + 26, by - flap); ctx.quadraticCurveTo(bx + 14, by - 10 - flap, bx, by); ctx.fill();
+  }
+  const r = rng(99);
+  for (let i = 0; i < 14; i++) {
+    const px = x + 60 + r() * (w - 120), py = y + 170 + r() * (h - 220);
+    const st = 0.2 + i * 0.2;
+    const s = eBack(p(lt, st, st + 0.35));
+    if (s <= 0) continue;
+    pumpkin(px, py, s * 0.9);
+    if (i % 4 === 1 && lt > st + 0.4) {
+      const a = p(lt, st + 0.4, st + 0.7);
+      ctx.save(); ctx.globalAlpha = a;
+      rrect(px + 22, py - 52, 132, 34, 8); ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fill();
+      text('★★★★★', px + 30, py - 27, { size: 20, font: '"DejaVu Sans", sans-serif', weight: 400, color: C.yellow, ls: 2 });
+      ctx.restore();
+    }
+  }
+  text(`${Math.min(14, Math.floor(p(lt, 0.2, 3.2) * 14 + 0.5))} DISPLAYS NEAR YOU`, x + 26, y + 46, { size: 22, font: MONO, weight: 700, color: C.orange });
+}
+function videoScene(x, y, w, h, lt) {
+  const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, '#0B1240'); g.addColorStop(1, '#1A0C35');
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  // carpet pattern
+  ctx.save(); ctx.globalAlpha = 0.25;
+  const r0 = rng(5);
+  for (let i = 0; i < 40; i++) { ctx.fillStyle = [C.pink, C.cyan, C.yellow][i % 3]; ctx.beginPath(); ctx.arc(x + r0() * w, y + h - 70 + r0() * 70, 6, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+  // neon sign
+  const flick = (Math.sin(lt * 37) > 0.85 && lt < 1.5) ? 0.3 : 1;
+  text('BE KIND · REWIND', x + w / 2, y + 80, { size: 46, weight: 900, color: '#FFE3F0', align: 'center', glow: C.pink, glowSize: 30, alpha: flick, ls: 4 });
+  text('NEW RELEASES', x + 40, y + 150, { size: 22, font: MONO, weight: 700, color: C.yellow, ls: 4 });
+  const r = rng(42);
+  const spines = ['#1E4FD8', '#FFD23F', '#E63946', '#2A9D8F', '#F4A261', '#8B5CF6', '#F3F6FB', '#111111', '#FF3D7F'];
+  for (let row = 0; row < 3; row++) {
+    const sy = y + 170 + row * 140;
+    ctx.fillStyle = '#3A2A1A'; ctx.fillRect(x + 30, sy + 112, w - 60, 14);
+    const shift = (row % 2 ? 1 : -1) * (1 - eOut(p(lt, row * 0.15, 0.9 + row * 0.15))) * 300;
+    for (let i = 0; i < 22; i++) {
+      const tx = x + 40 + i * 37 + shift;
+      const col = spines[Math.floor(r() * spines.length)];
+      const pick = row === 1 && i === 9;
+      const lift = pick ? eBack(p(lt, 2.0, 2.5)) * 40 : 0;
+      ctx.fillStyle = col; ctx.fillRect(tx, sy + 12 - lift, 32, 100);
+      ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fillRect(tx + 6, sy + 30 - lift, 20, 40);
+      if (pick && lt > 2.0) { ctx.save(); ctx.strokeStyle = C.yellow; ctx.lineWidth = 3; ctx.shadowColor = C.yellow; ctx.shadowBlur = 20; ctx.strokeRect(tx - 3, sy + 9 - lift, 38, 106); ctx.restore(); }
+    }
+  }
+  if (lt > 2.4) {
+    const a = eOut(p(lt, 2.4, 2.8));
+    ctx.save(); ctx.globalAlpha = a;
+    rrect(x + w - 330, y + h - 110, 300, 70, 12); ctx.fillStyle = C.yellow; ctx.fill();
+    text('RENTED · DUE TUESDAY', x + w - 180, y + h - 66, { size: 22, font: MONO, weight: 700, color: '#101010', align: 'center' });
+    ctx.restore();
+  }
+}
+const PROJECTS = [
+  { title: ['Balloon Race', 'Live Tracker'], desc: ['Follow every hot air balloon in the', 'Great Forest Park Balloon Race', 'as it flies across the sky.'], chips: [['Real-time GPS', C.cyan], ['Maps', C.orange]], url: 'balloon-tracker', scene: balloonScene, col: C.cyan },
+  { title: ['City Scavenger', 'Hunts'], desc: ['A location-tracking app that lets', 'anyone build scavenger hunts', 'around their own city.'], chips: [['Geolocation', C.green], ['Game design', C.pink]], url: 'scavenger-hunt', scene: scavengerScene, col: C.green },
+  { title: ['SpookMaps', '.com'], desc: ['Proud of your Halloween lawn', 'display? Put it on the map and', 'share it with the neighborhood.'], chips: [['Community', C.orange], ['Maps', C.purple]], url: 'spookmaps.com', scene: spookScene, col: C.orange },
+  { title: ["The '90s", 'Video Store'], desc: ['A retro rental store, simulated', 'in the browser. Late fees', 'not included.'], chips: [['Nostalgia', C.yellow], ['Interactive', C.pink]], url: 'retro-video-store', scene: videoScene, col: C.pink },
+];
+function sProject(i) {
+  return lt => {
+    const pr = PROJECTS[i];
+    const k = eOutExpo(p(lt, 0, 0.6));
+    ctx.save(); ctx.translate((1 - k) * -200, 0); ctx.globalAlpha = k;
+    browser(110, 170, 1000, 740, pr.url, lt, pr.scene);
+    ctx.restore();
+    const tx = 1200;
+    label(`// SIDE PROJECT 0${i + 1} / 04`, tx, 250, pr.col, eOut(p(lt, 0.15, 0.5)));
+    reveal(pr.title[0], tx, 360, lt, 0.2, { size: 88, weight: 900 });
+    reveal(pr.title[1], tx, 455, lt, 0.32, { size: 88, weight: 900, color: pr.col });
+    pr.desc.forEach((d, j) => reveal(d, tx, 560 + j * 50, lt, 0.6 + j * 0.1, { size: 36, weight: 500, color: C.dim, stagger: 0.03 }));
+    let cx = tx;
+    pr.chips.forEach(([s, c], j) => { const a = eOut(p(lt, 1.1 + j * 0.15, 1.5 + j * 0.15)); cx += chip(s, cx, 800, c, a) + 20; });
+  };
+}
+function sFunTag(lt) {
+  reveal('More fun than most client work.', W / 2, 520, lt, 0, { size: 96, weight: 900, align: 'center', stagger: 0.05 });
+  reveal("(Don't tell the clients.)", W / 2, 620, lt, 0.8, { size: 46, weight: 600, color: C.orange, align: 'center' });
+}
+
+// 8. Personality
+const TRAITS = [
+  ['Idea machine.', 'Creative solutions to all kinds of problems.', C.orange],
+  ['Talks to customers.', 'Voluntarily. Even enjoys it.', C.cyan],
+  ['Gets along with everybody.', 'A team player, through and through.', C.green],
+  ['Nights. Weekends.', 'Honestly? I never leave the computer.', C.pink],
+  ['Genuinely funny.', 'Serious about the work. Never about myself.', C.yellow],
+];
+function sTraits(lt) {
+  const i = Math.min(4, Math.floor(lt / 2));
+  const l = lt - i * 2;
+  const [big, small, col] = TRAITS[i];
+  label('// THE HUMAN PART', 140, 170, C.dim, 1);
+  // progress pips
+  for (let j = 0; j < 5; j++) { ctx.fillStyle = j <= i ? col : 'rgba(255,255,255,0.15)'; ctx.fillRect(140 + j * 46, 200, 36, 6); }
+  // accent shape
+  ctx.save();
+  ctx.translate(W - 330, H / 2 + 40); ctx.rotate(l * 0.4 + i);
+  const s = eBack(p(l, 0, 0.5));
+  ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  for (let v = 0; v <= 6; v++) { const a = v / 6 * Math.PI * 2; ctx.lineTo(Math.cos(a) * 190 * s, Math.sin(a) * 190 * s); }
+  ctx.stroke();
+  ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(0, 0, 250 * s, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+  text(String(i + 1).padStart(2, '0'), W - 330, H / 2 + 80, { size: 130, weight: 900, color: col, align: 'center', alpha: eOut(p(l, 0.1, 0.4)) });
+  const out = p(l, 1.75, 2.0);
+  ctx.save(); ctx.globalAlpha = 1 - out; ctx.translate(-out * 80, 0);
+  // mask-wipe for the headline
+  const wk = eOutExpo(p(l, 0, 0.5));
+  ctx.save(); ctx.beginPath(); ctx.rect(120, 380, 1300 * wk + 20, 220); ctx.clip();
+  const bigSize = Math.min(120, 120 * 1180 / measure(big, 120, 900));
+  text(big, 140, 540, { size: bigSize, weight: 900, color: C.white });
+  ctx.restore();
+  ctx.fillStyle = col; ctx.fillRect(140, 590, 300 * eOut(p(l, 0.2, 0.6)), 8);
+  reveal(small, 140, 680, l, 0.35, { size: 46, weight: 600, color: col, stagger: 0.05 });
+  ctx.restore();
+}
+function sGoal(lt) {
+  const k = eOutExpo(p(lt, 0, 0.5));
+  text('GOAL #1', W / 2, 400, { size: 44, weight: 700, font: MONO, color: C.cyan, align: 'center', ls: 14, alpha: k });
+  const k2 = eOutExpo(p(lt, 0.5, 1.1));
+  ctx.save(); ctx.translate(W / 2, 570); ctx.scale(lerp(0.6, 1, k2), lerp(0.6, 1, k2));
+  text('Keep people happy.', 0, 0, { size: 150, weight: 900, color: C.orange, align: 'center', alpha: k2, glow: 'rgba(255,122,47,0.55)', glowSize: 40 });
+  ctx.restore();
+  reveal('Clients, teammates, users. Every time.', W / 2, 680, lt, 1.5, { size: 46, weight: 600, color: C.white, align: 'center' });
+  // confetti burst
+  if (lt > 0.6) {
+    const r = rng(1234);
+    const tt = lt - 0.6;
+    for (let i = 0; i < 90; i++) {
+      const ang = r() * Math.PI * 2, sp = 300 + r() * 700;
+      const cx = W / 2 + Math.cos(ang) * sp * eOut(clamp(tt / 1.5));
+      const cy = 540 + Math.sin(ang) * sp * 0.6 * eOut(clamp(tt / 1.5)) + tt * tt * 90;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(tt * 6 * (r() - 0.5) * 4);
+      ctx.globalAlpha = 1 - p(tt, 1.8, 3.2);
+      ctx.fillStyle = [C.orange, C.cyan, C.pink, C.yellow, C.green][i % 5];
+      ctx.fillRect(-7, -3, 14, 6);
+      ctx.restore();
+    }
+  }
+}
+
+// 9. Outro
+function sOutro(lt) {
+  const k = eOut(p(lt, 0, 1.0));
+  ctx.save();
+  const g = ctx.createRadialGradient(1450, 560, 50, 1450, 560, 560);
+  g.addColorStop(0, 'rgba(255,122,47,0.4)'); g.addColorStop(1, 'rgba(34,211,238,0)');
+  ctx.globalAlpha = k; ctx.fillStyle = g; ctx.fillRect(850, 0, 1070, H);
+  ctx.restore();
+  drawPhoto(lerp(1700, 1460, k), 1100, 960 * (1 + lt * 0.01), k);
+  reveal("Let's build", 140, 300, lt, 0.2, { size: 120, weight: 900 });
+  reveal('something great.', 140, 430, lt, 0.4, { size: 120, weight: 900, color: C.orange });
+  const a = eOut(p(lt, 1.2, 1.8));
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = C.cyan; ctx.fillRect(140, 490, 520 * a, 4); ctx.restore();
+  reveal('JEREMY COINTIN', 140, 580, lt, 1.3, { size: 60, weight: 900, ls: 4 });
+  reveal('Web Developer · AI Workflows · St. Louis, MO', 140, 630, lt, 1.5, { size: 32, weight: 500, color: C.dim, stagger: 0.04 });
+  const contacts = [['EMAIL', 'jc@stlcodescape.com'], ['WEB', 'stlcodescape.com'], ['PHONE', '(314) 657-7421']];
+  contacts.forEach(([l, v], i) => {
+    const st = 2.0 + i * 0.25;
+    const ca = eOut(p(lt, st, st + 0.5));
+    text(l, 140, 750 + i * 72 + (1 - ca) * 20, { size: 24, weight: 700, font: MONO, color: C.cyan, ls: 4, alpha: ca });
+    text(v, 290, 750 + i * 72 + (1 - ca) * 20, { size: 44, weight: 700, color: C.white, alpha: ca });
+  });
+  text('Available nights & weekends. Seriously.', 140, 1010, { size: 28, weight: 500, font: MONO, color: C.dim, alpha: eOut(p(lt, 3.4, 4.0)) });
+}
+
+// ---------- timeline ----------
+const SCENES = [
+  [0, 7, sIntro],
+  [7, 15, sWho],
+  [15, 25, sJourney],
+  [25, 35, sRecord],
+  [35, 45, sToolkit],
+  [45, 55, sAI],
+  [55, 57, sFunTitle],
+  [57, 61, sProject(0)],
+  [61, 65, sProject(1)],
+  [65, 69, sProject(2)],
+  [69, 73, sProject(3)],
+  [73, 75, sFunTag],
+  [75, 85, sTraits],
+  [85, 89, sGoal],
+  [89, 100, sOutro],
+];
+const WIPES = [7, 15, 25, 35, 45, 55, 75, 89];
+
+function draw(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.shadowBlur = 0; ctx.setLineDash([]);
+  background(t);
+  for (const [a, b, fn] of SCENES) {
+    if (t < a || t >= b) continue;
+    const lt = t - a, dur = b - a;
+    const out = p(lt, dur - 0.25, dur);
+    ctx.save();
+    ctx.globalAlpha = 1 - out;
+    if (out > 0) { ctx.translate(W / 2, H / 2); const s = 1 + out * 0.06; ctx.scale(s, s); ctx.translate(-W / 2, -H / 2); }
+    fn(lt);
+    ctx.restore();
+  }
+  // diagonal wipe on the big section changes
+  for (const b of WIPES) {
+    const d = (t - b) / 0.35;
+    if (d < -1 || d > 1) continue;
+    const x = lerp(-600, W + 600, (d + 1) / 2);
+    ctx.save();
+    ctx.translate(x, H / 2); ctx.rotate(-0.35);
+    ctx.fillStyle = C.orange; ctx.fillRect(-260, -H, 60, H * 2);
+    ctx.fillStyle = C.cyan; ctx.fillRect(-200, -H, 400, H * 2);
+    ctx.fillStyle = C.white; ctx.fillRect(200, -H, 16, H * 2);
+    ctx.restore();
+  }
+  vignette();
+  // fade in / out
+  const f = Math.max(1 - p(t, 0, 0.4), p(t, DURATION - 1.6, DURATION));
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// ---------- playback / render hooks ----------
+window.draw = draw;
+window.DURATION = DURATION;
+window.ready = Promise.all([
+  new Promise(r => photo.complete ? r() : (photo.onload = r)),
+  document.fonts.load(`900 100px ${DISP}`), document.fonts.load(`700 40px ${DISP}`), document.fonts.load(`400 40px ${MONO}`),
+]);
+if (new URLSearchParams(location.search).has('render')) {
+  document.body.classList.add('render');
+} else {
+  const audio = document.getElementById('music');
+  const clock = document.getElementById('clock');
+  let start = null, useAudio = false;
+  document.getElementById('play').onclick = () => {
+    audio.currentTime = 0;
+    audio.play().then(() => { useAudio = true; }).catch(() => { useAudio = false; });
+    start = performance.now();
+  };
+  const loop = now => {
+    if (start === null) start = now;
+    let t = useAudio ? audio.currentTime : ((now - start) / 1000) % DURATION;
+    if (useAudio && audio.ended) t = DURATION - 0.01;
+    draw(t);
+    clock.textContent = t.toFixed(1) + 's';
+    requestAnimationFrame(loop);
+  };
+  window.ready.then(() => requestAnimationFrame(loop));
+}
+</script>
+</body>
+</html>
