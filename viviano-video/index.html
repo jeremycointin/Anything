@@ -1,0 +1,496 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Viviano Promo</title>
+<style>
+:root{--navy:#13233F;--navy2:#1D3560;--red:#C0272D;--cream:#F7F1E6;--gold:#E8A33D;--ink:#14213A;--glass:#BFE3F5}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:'Inter Display','Inter',sans-serif;color:var(--ink)}
+.scene{position:absolute;inset:0;display:none;overflow:hidden}
+.dark{background:radial-gradient(circle at 70% 30%,var(--navy2),var(--navy) 70%);color:#fff}
+.light{background:radial-gradient(circle at 30% 20%,#FFFBF3,var(--cream) 70%)}
+.abs{position:absolute}
+.pane{position:absolute;border-radius:18px}
+.dark .pane{border:3px solid rgba(255,255,255,.06)}
+.light .pane{border:3px solid rgba(19,35,63,.06)}
+.char{position:absolute;left:0;bottom:0;width:max-content;transform-origin:50% 100%;will-change:transform;opacity:0}
+.char img{height:900px;display:block}
+.kicker{display:inline-block;background:var(--red);color:#fff;font-weight:800;letter-spacing:.18em;font-size:26px;padding:10px 24px;border-radius:999px}
+.h{font-weight:900;letter-spacing:-.02em;line-height:1.02}
+.w{display:inline-block;white-space:pre}
+.sub{font-size:40px;font-weight:500;line-height:1.3}
+.dark .sub{color:#D7E1F2}
+.light .sub{color:#3A4A66}
+.bubble{position:absolute;background:#fff;color:var(--ink);border-radius:30px;padding:26px 34px;font-size:36px;font-weight:800;line-height:1.2;box-shadow:0 14px 34px rgba(0,0,0,.2);max-width:560px}
+.bubble::after{content:"";position:absolute;bottom:-26px;right:70px;border:18px solid transparent;border-top:30px solid #fff;border-bottom:0}
+.bubble.tl::after{right:auto;left:70px}
+.red{color:var(--red)} .gold{color:var(--gold)}
+/* scene 1 */
+#logo{position:absolute;left:0;right:0;top:330px;text-align:center}
+#logo .big{font-size:210px;font-weight:900;letter-spacing:.06em;color:#fff}
+#logo .bar{height:10px;background:var(--red);width:760px;margin:6px auto 22px;border-radius:5px;transform-origin:50% 50%}
+#logo .tag{font-size:46px;font-weight:700;letter-spacing:.42em;color:var(--gold);padding-left:.42em}
+#logo .pill{display:inline-block;margin-top:40px;border:3px solid rgba(255,255,255,.5);color:#fff;font-size:32px;font-weight:600;padding:12px 30px;border-radius:999px}
+#frame{position:absolute;left:580px;top:250px;width:760px;height:580px;transform-origin:50% 50%}
+#frame .sky{position:absolute;inset:22px;background:linear-gradient(#7EC3EA,#D9F0FB);overflow:hidden}
+#frame .sun{position:absolute;width:150px;height:150px;border-radius:50%;background:var(--gold);right:110px;top:90px;box-shadow:0 0 80px #FFD27A}
+#frame .hill{position:absolute;left:-60px;right:-60px;bottom:-160px;height:300px;border-radius:50%;background:#6FA35B}
+#frame .border{position:absolute;inset:0;border:22px solid var(--cream);border-radius:6px;box-shadow:0 30px 60px rgba(0,0,0,.4)}
+#frame .sill{position:absolute;left:-30px;right:-30px;bottom:-26px;height:30px;background:var(--cream);border-radius:6px}
+.sash{position:absolute;top:0;bottom:0;width:358px;border:16px solid #FFFFFF;background:linear-gradient(135deg,rgba(255,255,255,.55),rgba(191,227,245,.35) 40%,rgba(255,255,255,.15) 60%,rgba(191,227,245,.4));box-shadow:inset 0 0 0 3px rgba(0,0,0,.05)}
+#sashL{left:0} #sashR{right:0}
+/* chips */
+.chip{position:absolute;display:flex;align-items:center;gap:24px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.14);border-radius:999px;padding:16px 34px 16px 16px;font-size:40px;font-weight:700;color:#fff}
+.chip i{width:58px;height:58px;border-radius:50%;background:var(--red);display:grid;place-items:center;font-style:normal;font-weight:900;font-size:34px}
+/* plates */
+.plate{position:absolute;z-index:30;bottom:34px;width:340px;margin-left:-170px;text-align:center}
+.plate span{display:inline-block;background:var(--navy);color:#fff;font-size:26px;font-weight:800;letter-spacing:.06em;padding:12px 22px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.plate.owner span{background:var(--red)}
+/* checklist */
+.check{position:absolute;left:870px;display:flex;align-items:center;gap:24px;font-size:38px;font-weight:700;color:#fff}
+.check .tick{width:60px;height:60px;border-radius:50%;background:var(--gold);display:grid;place-items:center;flex:none}
+/* cards */
+.card{position:absolute;width:400px;height:290px;background:#fff;border-radius:28px;box-shadow:0 18px 40px rgba(19,35,63,.12);padding:34px;display:flex;flex-direction:column;justify-content:flex-end}
+.card svg{position:absolute;top:30px;left:32px;width:96px;height:96px}
+.card b{font-size:38px;font-weight:900;color:var(--ink)}
+.card small{font-size:26px;font-weight:600;color:#5A6884;margin-top:6px}
+.card .dot{position:absolute;top:34px;right:34px;width:20px;height:20px;border-radius:50%;background:var(--red)}
+/* shields */
+.shield{position:absolute;top:330px;width:420px;height:440px}
+.shield svg{position:absolute;inset:0}
+.shield .t{position:absolute;left:60px;right:60px;top:150px;text-align:center;color:#fff;font-weight:900;font-size:40px;line-height:1.15}
+.shield .n{position:absolute;left:0;right:0;top:64px;text-align:center;font-size:62px;font-weight:900;color:var(--gold)}
+.fin{position:absolute;left:140px;top:820px;background:var(--gold);color:var(--navy);font-size:40px;font-weight:900;padding:18px 36px;border-radius:999px}
+.foot{position:absolute;left:150px;top:920px;font-size:24px;color:#9FB0CC}
+/* showroom */
+#store{position:absolute;left:760px;top:300px;width:1060px;height:640px;background:#fff;border-radius:34px;box-shadow:0 20px 50px rgba(19,35,63,.15);overflow:hidden}
+.line{position:absolute;left:470px;display:flex;gap:20px;align-items:flex-start;font-size:36px;font-weight:700;color:var(--ink);width:560px;line-height:1.25}
+.line i{flex:none;width:52px;height:52px;border-radius:14px;background:var(--red);display:grid;place-items:center}
+/* finale */
+#cta{position:absolute;left:0;right:0;bottom:0;height:230px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 110px;box-shadow:0 -10px 40px rgba(0,0,0,.3)}
+#cta .btn{background:var(--red);color:#fff;font-size:50px;font-weight:900;padding:26px 50px;border-radius:999px;letter-spacing:.01em}
+#cta .ph{font-size:96px;font-weight:900;color:var(--navy);letter-spacing:-.01em;text-align:right;line-height:1}
+#cta .url{font-size:34px;font-weight:700;color:var(--red);text-align:right;margin-top:10px;letter-spacing:.04em}
+/* wipes */
+.wipe{position:absolute;top:-40px;height:1160px;width:2600px;left:0;transform:translateX(-3000px) skewX(-14deg);z-index:50}
+#wipeA{background:var(--red)} #wipeB{background:var(--navy)}
+#host{z-index:20}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- 1: logo reveal -->
+<section class="scene dark" id="s1" data-start="0" data-end="6">
+  <div class="panes"></div>
+  <div id="logo">
+    <div class="big" id="logoWord">VIVIANO</div>
+    <div class="bar" id="logoBar"></div>
+    <div class="tag" id="logoTag">WINDOW &amp; DOOR</div>
+    <div class="pill" id="logoPill">St. Louis, MO &nbsp;·&nbsp; Family-owned since 1993</div>
+  </div>
+  <div id="frame">
+    <div class="sky"><div class="sun"></div><div class="hill"></div><div class="sash" id="sashL"></div><div class="sash" id="sashR"></div></div>
+    <div class="border"></div><div class="sill"></div>
+  </div>
+</section>
+
+<!-- 2: meet the owner -->
+<section class="scene light" id="s2" data-start="6" data-end="14">
+  <div class="panes"></div>
+  <div class="abs" style="left:140px;top:250px;width:900px">
+    <div class="kicker" id="s2k">MEET THE OWNER</div>
+    <div class="h" id="s2h" style="font-size:132px;margin-top:30px">Hi, I'm <span class="red">Viviano.</span></div>
+    <div class="sub" id="s2s" style="margin-top:34px;max-width:820px">Family-owned and serving St. Louis homeowners since 1993.</div>
+  </div>
+  <svg class="abs" id="s2badge" style="left:150px;top:720px" width="200" height="200" viewBox="0 0 200 200">
+    <defs><path id="circ" d="M100,100 m-72,0 a72,72 0 1,1 144,0 a72,72 0 1,1 -144,0"/></defs>
+    <circle cx="100" cy="100" r="96" fill="#13233F"/>
+    <text font-size="21" font-weight="800" fill="#E8A33D" letter-spacing="5"><textPath href="#circ">FAMILY OWNED · ST. LOUIS · </textPath></text>
+    <text x="100" y="94" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">SINCE</text>
+    <text x="100" y="130" text-anchor="middle" font-size="42" font-weight="900" fill="#fff">1993</text>
+  </svg>
+  <div class="bubble" id="s2b" style="left:820px;top:40px">Let me show you why St. Louis trusts us with their homes!</div>
+</section>
+
+<!-- 3: problem -->
+<section class="scene dark" id="s3" data-start="14" data-end="24">
+  <div class="panes"></div>
+  <div class="h abs" id="s3h" style="left:150px;top:110px;font-size:110px">Sound familiar?</div>
+  <svg class="abs" id="oldwin" style="left:150px;top:300px" width="420" height="520" viewBox="0 0 420 520">
+    <rect x="0" y="0" width="420" height="500" rx="8" fill="#6B4E36"/>
+    <rect x="24" y="24" width="372" height="452" fill="#8FA3B3"/>
+    <rect x="24" y="24" width="372" height="452" fill="#C9D3DB" id="fog" opacity=".6"/>
+    <rect x="198" y="24" width="24" height="452" fill="#6B4E36"/>
+    <rect x="24" y="238" width="372" height="22" fill="#6B4E36"/>
+    <path d="M60 60 L110 130 L95 170 L140 230" stroke="#fff" stroke-width="4" fill="none" opacity=".8"/>
+    <path d="M300 280 L340 330 L325 360" stroke="#fff" stroke-width="4" fill="none" opacity=".8"/>
+    <rect x="-20" y="496" width="460" height="24" rx="6" fill="#5A3F2B"/>
+    <g id="wind" stroke="#BFE3F5" stroke-width="7" fill="none" stroke-linecap="round" opacity=".9">
+      <path d="M-40 120 C 80 90, 160 150, 300 110 S 420 120, 470 100" stroke-dasharray="90 60"/>
+      <path d="M-40 300 C 100 270, 180 330, 320 290 S 420 300, 470 280" stroke-dasharray="70 70"/>
+      <path d="M-40 400 C 90 380, 200 430, 330 395 S 420 400, 470 385" stroke-dasharray="110 50"/>
+    </g>
+  </svg>
+  <div class="chip" id="c1" style="left:660px;top:300px"><i>!</i>Drafty, chilly rooms</div>
+  <div class="chip" id="c2" style="left:660px;top:420px"><i>!</i>Foggy, failing glass</div>
+  <div class="chip" id="c3" style="left:660px;top:540px"><i>$</i>Climbing energy bills</div>
+  <div class="chip" id="c4" style="left:660px;top:660px"><i>!</i>Sticky, hard-to-open sashes</div>
+  <div class="abs" id="s3better" style="left:150px;top:880px;font-size:84px;font-weight:900">There's a <span class="gold">better way.</span>
+    <div id="s3line" style="height:10px;background:var(--red);border-radius:5px;margin-top:6px;transform-origin:0 50%"></div></div>
+  <div class="bubble" id="s3b" style="left:1170px;top:80px">We fix that. Every single day.</div>
+</section>
+
+<!-- 4: energy efficiency -->
+<section class="scene light" id="s4" data-start="24" data-end="36">
+  <div class="panes"></div>
+  <div class="abs" style="left:120px;top:80px">
+    <div class="kicker" id="s4k">REASON 01</div>
+    <div class="h" id="s4h" style="font-size:88px;margin-top:22px">Energy-efficient windows<br>that <span class="red">pay you back.</span></div>
+  </div>
+  <svg class="abs" id="diag" style="left:90px;top:340px" width="760" height="620" viewBox="0 0 760 620">
+    <g id="sunG"><circle cx="90" cy="130" r="50" fill="#E8A33D"/>
+      <g stroke="#E8A33D" stroke-width="8" stroke-linecap="round">
+        <line x1="90" y1="45" x2="90" y2="25"/><line x1="90" y1="215" x2="90" y2="235"/><line x1="5" y1="130" x2="-15" y2="130"/><line x1="175" y1="130" x2="195" y2="130"/>
+        <line x1="30" y1="70" x2="16" y2="56"/><line x1="150" y1="190" x2="164" y2="204"/><line x1="150" y1="70" x2="164" y2="56"/><line x1="30" y1="190" x2="16" y2="204"/></g></g>
+    <rect x="352" y="64" width="78" height="472" fill="#BFE3F5" opacity=".35"/>
+    <g id="argon"></g>
+    <rect x="330" y="64" width="22" height="472" fill="#BFE3F5" stroke="#7FB5D3" stroke-width="2"/>
+    <rect x="430" y="64" width="22" height="472" fill="#BFE3F5" stroke="#7FB5D3" stroke-width="2"/>
+    <line id="lowe" x1="352" y1="64" x2="352" y2="536" stroke="#E8A33D" stroke-width="6" stroke-dasharray="20 10"/>
+    <rect x="310" y="40" width="162" height="26" rx="6" fill="#13233F"/>
+    <rect x="310" y="534" width="162" height="26" rx="6" fill="#13233F"/>
+    <g id="heat"></g>
+    <g font-size="27" font-weight="800" fill="#14213A" id="labels">
+      <g id="lb1"><line x1="356" y1="150" x2="500" y2="150" stroke="#C0272D" stroke-width="3"/><circle cx="356" cy="150" r="7" fill="#C0272D"/><text x="510" y="142">Low-E coated</text><text x="510" y="174">glass</text></g>
+      <g id="lb2"><line x1="392" y1="320" x2="500" y2="320" stroke="#C0272D" stroke-width="3"/><circle cx="392" cy="320" r="7" fill="#C0272D"/><text x="510" y="312">Argon gas</text><text x="510" y="344">insulation</text></g>
+      <g id="lb3"><line x1="440" y1="547" x2="500" y2="500" stroke="#C0272D" stroke-width="3"/><circle cx="440" cy="547" r="7" fill="#C0272D"/><text x="510" y="490">Sealed, tight</text><text x="510" y="522">frame</text></g>
+    </g>
+  </svg>
+  <div class="abs" id="chart" style="left:900px;top:380px;width:380px;height:460px">
+    <div style="font-size:28px;font-weight:800;color:#3A4A66;text-align:center">Heat escaping your home</div>
+    <div class="abs" style="left:30px;bottom:60px;width:130px;height:340px;display:flex;align-items:flex-end"><div id="bar1" style="width:100%;background:#C0272D;border-radius:14px 14px 0 0;height:340px;transform-origin:50% 100%"></div></div>
+    <div class="abs" style="left:220px;bottom:60px;width:130px;height:340px;display:flex;align-items:flex-end"><div id="bar2" style="width:100%;background:#13233F;border-radius:14px 14px 0 0;height:340px;transform-origin:50% 100%"></div></div>
+    <div class="abs" style="left:0;bottom:0;width:190px;text-align:center;font-size:26px;font-weight:700">Old windows</div>
+    <div class="abs" style="left:190px;bottom:0;width:190px;text-align:center;font-size:26px;font-weight:800;color:#C0272D">Viviano</div>
+    <div class="abs" style="left:0;right:0;bottom:56px;height:4px;background:#14213A;border-radius:2px"></div>
+  </div>
+  <div class="abs" id="estar" style="left:900px;top:880px;background:#13233F;color:#fff;font-size:30px;font-weight:800;padding:14px 28px;border-radius:999px">ENERGY STAR® rated options</div>
+</section>
+
+<!-- 5: team -->
+<section class="scene light" id="s5" data-start="36" data-end="46">
+  <div class="panes"></div>
+  <div class="abs" style="left:0;right:0;top:56px;text-align:center">
+    <div class="kicker" id="s5k">REASON 02</div>
+    <div class="h" id="s5h" style="font-size:96px;margin-top:20px">A local, <span class="red">family-owned</span> team.</div>
+    <div class="sub" id="s5s" style="margin-top:18px">Real St. Louis neighbors, from first call to final walkthrough.</div>
+  </div>
+  <div class="char" id="t2a"><img src="assets/showroom.webp"></div>
+  <div class="char" id="t3a"><img src="assets/pm.webp"></div>
+  <div class="char" id="t4a"><img src="assets/design.webp"></div>
+  <div class="char" id="t5a"><img src="assets/installer.webp"></div>
+  <div class="plate owner" id="p1" style="left:280px"><span>THE OWNER</span></div>
+  <div class="plate" id="p2" style="left:700px"><span>SHOWROOM</span></div>
+  <div class="plate" id="p3" style="left:1040px"><span>PROJECT LEAD</span></div>
+  <div class="plate" id="p4" style="left:1380px"><span>DESIGN EXPERT</span></div>
+  <div class="plate" id="p5" style="left:1720px"><span>INSTALL PRO</span></div>
+</section>
+
+<!-- 6: installation -->
+<section class="scene dark" id="s6" data-start="46" data-end="56">
+  <div class="panes"></div>
+  <div class="char" id="t5b"><img src="assets/installer.webp"></div>
+  <div class="abs" style="left:880px;top:100px">
+    <div class="kicker" id="s6k">REASON 03</div>
+    <div class="h" id="s6h" style="font-size:88px;margin-top:22px">Expert installation,<br><span class="gold">done right.</span></div>
+  </div>
+  <div class="check" id="k1" style="top:420px"><span class="tick"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M6 18 L14 26 L28 9" stroke="#13233F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg></span>Precise in-home measuring</div>
+  <div class="check" id="k2" style="top:510px"><span class="tick"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M6 18 L14 26 L28 9" stroke="#13233F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg></span>Careful removal of old units</div>
+  <div class="check" id="k3" style="top:600px"><span class="tick"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M6 18 L14 26 L28 9" stroke="#13233F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg></span>Professional install &amp; sealing</div>
+  <div class="check" id="k4" style="top:690px"><span class="tick"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M6 18 L14 26 L28 9" stroke="#13233F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg></span>Clean-up &amp; final walkthrough</div>
+  <div class="check" id="k5" style="top:780px"><span class="tick"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M6 18 L14 26 L28 9" stroke="#13233F" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg></span>Backed by our workmanship warranty</div>
+</section>
+
+<!-- 7: one roof -->
+<section class="scene light" id="s7" data-start="56" data-end="66">
+  <div class="panes"></div>
+  <div class="abs" style="left:120px;top:70px">
+    <div class="kicker" id="s7k">REASON 04</div>
+    <div class="h" id="s7h" style="font-size:84px;margin-top:20px">Everything for your home, <span class="red">one roof.</span></div>
+    <div class="sub" id="s7s" style="margin-top:10px;font-size:34px">Featuring trusted lines like <b>Sunrise</b> &amp; <b>Polaris</b>, plus specialty options.</div>
+  </div>
+  <div class="card" id="g1" style="left:120px;top:340px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="8" y="6" width="48" height="52" rx="3"/><line x1="32" y1="6" x2="32" y2="58"/><line x1="8" y1="32" x2="56" y2="32"/></svg><b>Replacement Windows</b><small>Energy-efficient upgrades</small></div>
+  <div class="card" id="g2" style="left:550px;top:340px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><path d="M10 58 V30 A22 22 0 0 1 54 30 V58 Z"/><line x1="32" y1="8" x2="32" y2="58"/><line x1="10" y1="36" x2="54" y2="36"/></svg><b>Custom Windows</b><small>Bays, bows &amp; unique shapes</small></div>
+  <div class="card" id="g3" style="left:980px;top:340px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="14" y="4" width="36" height="56" rx="3"/><rect x="21" y="12" width="22" height="16"/><circle cx="42" cy="36" r="3" fill="#13233F"/></svg><b>Entry Doors</b><small>Steel · fiberglass · wood</small></div>
+  <div class="card" id="g4" style="left:120px;top:660px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="4" y="6" width="56" height="52" rx="3"/><line x1="32" y1="6" x2="32" y2="58"/><path d="M40 32 H52 M48 28 L52 32 L48 36"/></svg><b>Patio Doors</b><small>Sliding &amp; hinged styles</small></div>
+  <div class="card" id="g5" style="left:550px;top:660px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="6" y="6" width="52" height="18" rx="2"/><rect x="4" y="30" width="56" height="6"/><rect x="6" y="36" width="52" height="22" rx="2"/><line x1="32" y1="36" x2="32" y2="58"/><line x1="32" y1="6" x2="32" y2="24"/></svg><b>Kitchens</b><small>Cabinetry &amp; more</small></div>
+  <div class="card" id="g6" style="left:980px;top:660px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><path d="M4 26 L32 6 L60 26 V58 H4 Z"/><rect x="14" y="30" width="36" height="28"/><line x1="14" y1="37" x2="50" y2="37"/><line x1="14" y1="44" x2="50" y2="44"/><line x1="14" y1="51" x2="50" y2="51"/></svg><b>Garage Doors</b><small>Doors &amp; openers</small></div>
+  <div class="char" id="t4b"><img src="assets/design.webp"></div>
+</section>
+
+<!-- 8: warranty -->
+<section class="scene dark" id="s8" data-start="66" data-end="74">
+  <div class="panes"></div>
+  <div class="abs" style="left:140px;top:90px">
+    <div class="kicker" id="s8k">REASON 05</div>
+    <div class="h" id="s8h" style="font-size:96px;margin-top:22px">Double the <span class="gold">protection.</span></div>
+  </div>
+  <div class="shield" id="sh1" style="left:120px"><svg viewBox="0 0 420 440"><path d="M210 10 L390 70 V200 C390 320 300 400 210 430 C120 400 30 320 30 200 V70 Z" fill="#1D3560" stroke="#E8A33D" stroke-width="10"/></svg><div class="n">1</div><div class="t">Manufacturer product warranty</div></div>
+  <div class="abs h gold" id="plus" style="left:552px;top:470px;font-size:110px">+</div>
+  <div class="shield" id="sh2" style="left:640px"><svg viewBox="0 0 420 440"><path d="M210 10 L390 70 V200 C390 320 300 400 210 430 C120 400 30 320 30 200 V70 Z" fill="#C0272D" stroke="#E8A33D" stroke-width="10"/></svg><div class="n">2</div><div class="t">Viviano workmanship warranty</div></div>
+  <div class="fin" id="fin">+ Flexible financing available*</div>
+  <div class="foot" id="foot">*Through a lending partner, subject to credit approval.</div>
+  <div class="bubble" id="s8b" style="left:1150px;top:70px">We stand behind every install.</div>
+</section>
+
+<!-- 9: showroom -->
+<section class="scene light" id="s9" data-start="74" data-end="82">
+  <div class="panes"></div>
+  <div class="char" id="t2b"><img src="assets/showroom.webp"></div>
+  <div class="abs" style="left:760px;top:70px">
+    <div class="kicker" id="s9k">COME SEE US</div>
+    <div class="h" id="s9h" style="font-size:88px;margin-top:20px">Visit our <span class="red">showroom.</span></div>
+  </div>
+  <div id="store">
+    <svg class="abs" style="left:40px;top:150px" width="390" height="440" viewBox="0 0 390 440">
+      <rect x="20" y="120" width="350" height="300" fill="#F7F1E6" stroke="#13233F" stroke-width="6"/>
+      <rect x="10" y="90" width="370" height="40" fill="#13233F"/>
+      <g id="awn"><path d="M10 130 H380 L370 175 H20 Z" fill="#C0272D"/>
+      <g fill="#fff"><path d="M56 130 H102 L98 175 H52 Z"/><path d="M148 130 H194 L192 175 H146 Z"/><path d="M240 130 H286 L286 175 H240 Z"/><path d="M332 130 H378 L370 175 H334 Z"/></g></g>
+      <rect x="45" y="205" width="130" height="110" fill="#BFE3F5" stroke="#13233F" stroke-width="5"/><line x1="110" y1="205" x2="110" y2="315" stroke="#13233F" stroke-width="5"/>
+      <rect x="215" y="205" width="130" height="110" fill="#BFE3F5" stroke="#13233F" stroke-width="5"/><line x1="280" y1="205" x2="280" y2="315" stroke="#13233F" stroke-width="5"/>
+      <rect x="150" y="330" width="90" height="90" fill="#13233F"/>
+      <text x="195" y="117" text-anchor="middle" fill="#fff" font-size="26" font-weight="900" letter-spacing="4">VIVIANO</text>
+    </svg>
+    <svg class="abs" id="pin" style="left:185px;top:20px" width="100" height="130" viewBox="0 0 100 130"><path d="M50 125 C50 125 92 72 92 44 A42 42 0 0 0 8 44 C8 72 50 125 50 125 Z" fill="#C0272D"/><circle cx="50" cy="44" r="16" fill="#fff"/></svg>
+    <div class="line" id="l1" style="top:120px"><i><svg width="28" height="28" viewBox="0 0 28 28"><path d="M14 26 C14 26 24 15 24 10 A10 10 0 0 0 4 10 C4 15 14 26 14 26Z" fill="#fff"/></svg></i><span>7530 Watson Rd<br>Shrewsbury, MO 63119</span></div>
+    <div class="line" id="l2" style="top:290px"><i><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" stroke="#fff" stroke-width="3" fill="none"/><path d="M14 8 V14 L18 17" stroke="#fff" stroke-width="3" fill="none"/></svg></i><span>Mon – Fri · 8am – 4pm</span></div>
+    <div class="line" id="l3" style="top:400px"><i><svg width="28" height="28" viewBox="0 0 28 28"><path d="M6 14 L12 20 L22 8" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg></i><span>Walk-ins welcome. Call ahead for one-on-one time with a specialist.</span></div>
+  </div>
+</section>
+
+<!-- 10: finale -->
+<section class="scene dark" id="s10" data-start="82" data-end="90.01">
+  <div class="panes"></div>
+  <div class="abs" style="left:0;right:0;top:60px;text-align:center">
+    <div class="h" id="s10h" style="font-size:88px">Your home. <span class="gold">Our family's name on it.</span></div>
+  </div>
+  <div class="char" id="t2c"><img src="assets/showroom.webp"></div>
+  <div class="char" id="t3c"><img src="assets/pm.webp"></div>
+  <div class="char" id="t4c"><img src="assets/design.webp"></div>
+  <div class="char" id="t5c"><img src="assets/installer.webp"></div>
+  <div id="cta">
+    <div><div class="btn" id="btn">Get your FREE estimate</div></div>
+    <div><div class="ph" id="ph">314-353-8350</div><div class="url" id="url">VIVIANO-INC.COM</div></div>
+  </div>
+</section>
+
+<div class="char" id="host"><img src="assets/viviano.webp"></div>
+<div class="wipe" id="wipeA"></div>
+<div class="wipe" id="wipeB"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const lerp=(a,b,k)=>a+(b-a)*k;
+const E={
+  lin:t=>t,
+  out:t=>1-Math.pow(1-t,3),
+  inOut:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,
+  back:t=>{const c1=1.9,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)},
+  in:t=>t*t*t,
+};
+const p=(t,s,d,e=E.out)=>e(clamp((t-s)/d));
+function set(el,{x=0,y=0,s=1,sx,sy,r=0,o=1}={}){
+  el.style.transform=`translate(${x}px,${y}px) rotate(${r}deg) scale(${sx??s},${sy??s})`;
+  el.style.opacity=o;
+}
+const rise=(el,lt,st,d=.6,dist=50)=>{const k=p(lt,st,d);set(el,{y:(1-k)*dist,o:k})};
+const pop=(el,lt,st,d=.55)=>{const k=p(lt,st,d,E.back);set(el,{s:Math.max(0,k),o:clamp((lt-st)/d*3)})};
+const slide=(el,lt,st,d=.6,dx=-80)=>{const k=p(lt,st,d);set(el,{x:(1-k)*dx,o:k})};
+
+// split headings into words
+function split(el){
+  const walk=n=>{[...n.childNodes].forEach(c=>{
+    if(c.nodeType===3){const f=document.createDocumentFragment();
+      c.textContent.split(/(\s+)/).forEach(w=>{if(!w)return;if(/^\s+$/.test(w)){f.append(document.createTextNode(w));return}
+        const s=document.createElement('span');s.className='w';s.textContent=w;f.append(s)});
+      c.replaceWith(f)} else if(c.nodeType===1&&c.tagName!=='BR')walk(c)})};
+  walk(el);el._w=[...el.querySelectorAll('.w')];
+}
+function words(el,lt,st,stag=.07){
+  el._w.forEach((w,i)=>{const k=p(lt,st+i*stag,.55,E.back);const o=clamp((lt-st-i*stag)/.25);
+    w.style.transform=`translateY(${(1-k)*70}px) rotate(${(1-k)*8}deg)`;w.style.opacity=o});
+}
+function type(el,lt,st,cps=30){
+  if(!el._t)el._t=el.textContent;
+  const n=Math.max(0,Math.floor((lt-st)*cps));const a=el._t.slice(0,n),b=el._t.slice(n);
+  el.innerHTML=`${a}<span style="opacity:0">${b}</span>`;
+}
+function bubble(el,lt,st,origin='85% 110%'){
+  el.style.transformOrigin=origin;pop(el,lt,st,.5);type(el,lt,st+.15);
+}
+// character posing: x = center px, y = lift px (negative = below), s = scale
+function pose(el,t,{x,y=0,s=1,o=1,r=0},seed=0){
+  const bob=Math.sin(t*4.2+seed)*5, sway=Math.sin(t*1.6+seed*2)*1.3;
+  el.style.transform=`translate(${x}px,${-(y+bob)}px) translateX(-50%) rotate(${r+sway}deg) scale(${s})`;
+  el.style.opacity=o;
+}
+function enter(el,t,lt,st,x,s,seed){
+  const k=p(lt,st,.75,E.back);
+  pose(el,t,{x,y:lerp(-1000,0,k),s,o:lt>=st?1:0},seed);
+}
+
+// ambient window panes per scene
+document.querySelectorAll('.panes').forEach((c,j)=>{
+  c._p=[];for(let i=0;i<9;i++){const d=document.createElement('div');d.className='pane';
+    const sz=120+((i*73+j*41)%5)*70;d.style.width=d.style.height=sz+'px';
+    d._x=((i*397+j*211)%1920);d._y=((i*251+j*137)%1080);d._v=10+(i%4)*8;d._r=(i%2?1:-1)*(3+i%3);
+    c.append(d);c._p.push(d)}
+});
+function panes(sc,lt){sc.querySelector('.panes')._p.forEach(d=>{
+  d.style.transform=`translate(${d._x-100}px,${d._y-100-lt*d._v}px) rotate(${lt*d._r}deg)`})}
+
+document.querySelectorAll('.h').forEach(split);
+['logoWord'].forEach(id=>{const el=$(id);el.innerHTML=[...el.textContent].map(c=>`<span class="w">${c}</span>`).join('');el._w=[...el.querySelectorAll('.w')]});
+
+// argon dots + heat particles
+const NS='http://www.w3.org/2000/svg';
+const argon=[];for(let i=0;i<16;i++){const c=document.createElementNS(NS,'circle');c.setAttribute('r',6);c.setAttribute('fill','#7FB5D3');$('argon').append(c);argon.push(c)}
+const heat=[];for(let i=0;i<6;i++){const c=document.createElementNS(NS,'circle');c.setAttribute('r',10);c.setAttribute('fill','#E8742D');$('heat').append(c);heat.push(c)}
+
+// Viviano (host) keyframes: [time, x, y, scale, ease]
+const HK=[
+  [0,1400,-1000,.95],[6.15,1400,-1000,.95],[7.0,1400,0,.95,'back'],
+  [14,1400,0,.95],[14.7,1540,0,.9],
+  [24,1540,0,.9],[24.7,1600,0,.84],
+  [36,1600,0,.84],[36.8,280,0,.82],
+  [46,280,0,.82],[46.7,1800,0,.58],
+  [55.6,1800,0,.58],[56.2,1800,-1000,.58,'in'],
+  [65.9,1500,-1000,.9],[66.8,1500,0,.9,'back'],
+  [73.6,1500,0,.9],[74.2,1500,-1000,.9,'in'],
+  [82.05,960,-1000,.86],[82.95,960,0,.86,'back'],
+  [91,960,0,.86]
+];
+function host(t){
+  let i=0;while(i<HK.length-2&&t>HK[i+1][0])i++;
+  const a=HK[i],b=HK[i+1];const k=E[b[4]||'inOut'](clamp((t-a[0])/(b[0]-a[0])));
+  const y=lerp(a[2],b[2],k);
+  // little hop while travelling sideways
+  const hop=a[1]!==b[1]?Math.sin(clamp((t-a[0])/(b[0]-a[0]))*Math.PI)*120:0;
+  pose($('host'),t,{x:lerp(a[1],b[1],k),y:y+hop,s:lerp(a[3],b[3],k),o:y<-950?0:1},0);
+}
+
+const R={
+s1(lt,t){
+  const k=p(lt,.5,1.1,E.inOut);
+  $('sashL').style.transform=`translateX(${-k*330}px)`;$('sashR').style.transform=`translateX(${k*330}px)`;
+  const z=p(lt,2.1,1.0,E.in);
+  set($('frame'),{s:lerp(.6,1,p(lt,0,.7,E.back))+z*6,o:1-p(lt,2.5,.6,E.lin)});
+  words($('logoWord'),lt,2.6,.08);
+  const b=p(lt,3.4,.6);$('logoBar').style.transform=`scaleX(${b})`;
+  rise($('logoTag'),lt,3.6);rise($('logoPill'),lt,4.0);
+},
+s2(lt,t){
+  rise($('s2k'),lt,.5);words($('s2h'),lt,.8);rise($('s2s'),lt,1.6);
+  const k=p(lt,2.2,.7,E.back);set($('s2badge'),{s:k,r:(1-k)*-200+Math.sin(lt*2)*6,o:clamp((lt-2.2)*4)});
+  bubble($('s2b'),lt,2.6);
+},
+s3(lt,t){
+  words($('s3h'),lt,.3);
+  const ow=p(lt,.6,.7,E.back);set($('oldwin'),{s:ow,o:clamp((lt-.6)*4),r:Math.sin(lt*9)*(lt>1.5?1.2:0)});
+  [...$('wind').children].forEach((w,i)=>w.setAttribute('stroke-dashoffset',-lt*(260+i*60)));
+  $('fog').setAttribute('opacity',.45+.2*Math.sin(lt*2));
+  ['c1','c2','c3','c4'].forEach((id,i)=>slide($(id),lt,1.4+i*.55,.55,-120));
+  rise($('s3better'),lt,5.2,.6,60);
+  $('s3line').style.transform=`scaleX(${p(lt,5.8,.6)})`;
+  bubble($('s3b'),lt,6.4);
+},
+s4(lt,t){
+  rise($('s4k'),lt,.4);words($('s4h'),lt,.6,.06);
+  const d=p(lt,1.4,.7,E.back);set($('diag'),{s:d,o:clamp((lt-1.4)*4)});
+  $('lowe').setAttribute('stroke-dashoffset',-lt*40);
+  $('sunG').setAttribute('transform',`rotate(${lt*20} 90 130)`);
+  argon.forEach((c,i)=>{const x=372+((i*13)%40)+Math.sin(lt*1.7+i)*12,y=90+((i*31)%430)+Math.cos(lt*1.3+i*2)*18;c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('opacity',clamp((lt-2)*2)*.85)});
+  heat.forEach((c,i)=>{const ph=((lt-2.2)*0.55+i/heat.length)%1;const on=lt>2.2;
+    const y0=130,yh=110+i*70;let x,y;
+    if(ph<.55){const q=ph/.55;x=lerp(150,326,q);y=lerp(y0,yh,q)}else{const q=(ph-.55)/.45;x=lerp(326,170,q);y=lerp(yh,yh+70,q)}
+    c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('opacity',on?(ph<.55?.95:.95*(1-(ph-.55)/.45)):0)});
+  ['lb1','lb2','lb3'].forEach((id,i)=>$(id).setAttribute('opacity',clamp((lt-2.6-i*.5)*3)));
+  rise($('chart'),lt,4.4);
+  $('bar1').style.transform=`scaleY(${p(lt,4.8,.8)})`;
+  $('bar2').style.transform=`scaleY(${p(lt,5.6,.9,E.back)*.42})`;
+  pop($('estar'),lt,7.0);
+},
+s5(lt,t){
+  rise($('s5k'),lt,.3);words($('s5h'),lt,.5,.06);rise($('s5s'),lt,1.3);
+  [['t2a',700],['t3a',1040],['t4a',1380],['t5a',1720]].forEach(([id,x],i)=>enter($(id),t,lt,1.6+i*.35,x,.64,i+1));
+  pop($('p1'),lt,1.2);['p2','p3','p4','p5'].forEach((id,i)=>pop($(id),lt,2.2+i*.35));
+},
+s6(lt,t){
+  const k=p(lt,.2,.8,E.back);pose($('t5b'),t,{x:lerp(-300,430,k),s:.92,r:(1-k)*-10},5);
+  rise($('s6k'),lt,.6);words($('s6h'),lt,.8,.07);
+  ['k1','k2','k3','k4','k5'].forEach((id,i)=>{const st=2.0+i*.75;slide($(id),lt,st,.5,80);
+    const tick=$(id).querySelector('.tick');tick.style.transform=`scale(${p(lt,st+.2,.45,E.back)})`;
+    tick.querySelector('path').setAttribute('stroke-dashoffset',1-p(lt,st+.4,.35))});
+},
+s7(lt,t){
+  rise($('s7k'),lt,.3);words($('s7h'),lt,.5,.06);rise($('s7s'),lt,1.3);
+  ['g1','g2','g3','g4','g5','g6'].forEach((id,i)=>{const st=1.9+i*.3;const k=p(lt,st,.6,E.back);
+    set($(id),{s:k,y:Math.sin(t*2+i)*6*clamp(lt-st-.6),o:clamp((lt-st)*4)})});
+  const k=p(lt,.4,.8,E.back);pose($('t4b'),t,{x:lerp(2300,1660,k),s:.88},4);
+},
+s8(lt,t){
+  rise($('s8k'),lt,.3);words($('s8h'),lt,.5,.08);
+  const a=p(lt,1.3,.7,E.back),b=p(lt,2.0,.7,E.back);
+  set($('sh1'),{s:a,r:(1-a)*-20,o:clamp((lt-1.3)*4),y:Math.sin(t*2)*6});
+  pop($('plus'),lt,1.8);
+  set($('sh2'),{s:b,r:(1-b)*20,o:clamp((lt-2.0)*4),y:Math.sin(t*2+1)*6});
+  pop($('fin'),lt,3.4);rise($('foot'),lt,3.9,.5,20);
+  bubble($('s8b'),lt,4.3);
+},
+s9(lt,t){
+  const k=p(lt,.2,.8,E.back);pose($('t2b'),t,{x:lerp(-300,370,k),s:.92},2);
+  rise($('s9k'),lt,.5);words($('s9h'),lt,.7,.08);
+  const c=p(lt,1.1,.7,E.back);set($('store'),{s:lerp(.85,1,c),o:clamp((lt-1.1)*4)});
+  const pin=p(lt,1.8,.7,E.back);set($('pin'),{y:lerp(-200,0,pin)+Math.sin(lt*4)*6*clamp(lt-2.5),o:clamp((lt-1.8)*5)});
+  $('awn').setAttribute('transform',`translate(0 ${Math.sin(lt*3)*2})`);
+  ['l1','l2','l3'].forEach((id,i)=>slide($(id),lt,2.4+i*.5,.55,60));
+},
+s10(lt,t){
+  words($('s10h'),lt,.9,.07);
+  [['t2c',330,1.2],['t3c',640,1.45],['t4c',1280,1.7],['t5c',1590,1.95]].forEach(([id,x,st],i)=>enter($(id),t,lt,st,x,.6,i+3));
+  const c=p(lt,2.2,.7,E.back);set($('cta'),{y:(1-c)*260});
+  const pulse=lt>3.5?1+Math.sin((lt-3.5)*6)*.04:1;
+  const bk=p(lt,2.7,.6,E.back);set($('btn'),{s:bk*pulse,o:clamp((lt-2.7)*4)});
+  pop($('ph'),lt,3.0);rise($('url'),lt,3.4,.5,20);
+},
+};
+
+const scenes=[...document.querySelectorAll('.scene')];
+const CUTS=[6,14,24,36,46,56,66,74,82];
+function renderAt(t){
+  scenes.forEach(sc=>{const st=+sc.dataset.start,en=+sc.dataset.end;const on=t>=st&&t<en;
+    sc.style.display=on?'block':'none';if(on){const lt=t-st;panes(sc,lt);R[sc.id](lt,t)}});
+  host(t);
+  let a=-3000,b=-3000;
+  CUTS.forEach(c=>{const d=t-c;
+    if(Math.abs(d+.07)<.6)a=lerp(-2800,2300,E.inOut((d+.07+.6)/1.2));
+    if(Math.abs(d)<.6)b=lerp(-2800,2300,E.inOut((d+.6)/1.2));});
+  $('wipeA').style.transform=`translateX(${a}px) skewX(-14deg)`;
+  $('wipeB').style.transform=`translateX(${b}px) skewX(-14deg)`;
+}
+window.renderAt=renderAt;
+window.ready=Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))).then(()=>document.fonts.ready);
+if(!location.search.includes('capture')){
+  const t0=performance.now();
+  const q=new URLSearchParams(location.search);const off=+(q.get('t')||0);
+  (function loop(){renderAt((off+(performance.now()-t0)/1000)%90);requestAnimationFrame(loop)})();
+}
+</script>
+</body>
+</html>
