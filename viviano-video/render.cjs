@@ -1,5 +1,6 @@
 // Render index.html to MP4 frame-by-frame.
 // Usage: NODE_PATH=$(npm root -g) node render.cjs [out.mp4] [--stills 3,10,20]
+// Pipeline: render.cjs (silent video) -> soundtrack.py (music) -> mix.py (voice + music + mux)
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
 const path = require('path');
@@ -7,7 +8,7 @@ const path = require('path');
 const FPS = 30, DURATION = 90;
 const args = process.argv.slice(2);
 const stillsIdx = args.indexOf('--stills');
-const out = args.find(a => a.endsWith('.mp4')) || path.join(__dirname, 'viviano-promo.mp4');
+const out = args.find(a => a.endsWith('.mp4')) || path.join(__dirname, 'viviano-promo-silent.mp4');
 
 (async () => {
   const browser = await chromium.launch();
