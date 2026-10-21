@@ -1,6 +1,6 @@
 """Lay the per-scene voiceover clips over soundtrack.wav and mux into the video.
 
-Usage: python3 mix.py   (expects vo/scene01.mp3 ... vo/scene10.mp3, soundtrack.wav,
+Usage: python3 mix.py   (expects vo/scene01.mp3 ... vo/scene11.mp3, soundtrack.wav,
                          viviano-promo-silent.mp4; writes viviano-promo.mp4)
 """
 import json
@@ -8,9 +8,11 @@ import subprocess
 from pathlib import Path
 
 HERE = Path(__file__).parent
-SCENES = [0, 6, 14, 24, 36, 46, 56, 66, 74, 82, 90]
-LEAD = {1: 1.4}  # seconds after scene start before the line begins (default below)
-START = {10: None}  # scene 10's line runs long: start it so it ends just before 90s
+SCENES = [0, 6, 14, 22, 30, 40, 50, 58, 66, 74, 82, 90]
+N = len(SCENES) - 1
+LEAD = {1: 0.3, 2: 1.0}  # seconds after scene start before the line begins (default below)
+TAILS = {1: -0.45}  # the opening line may run into the first wipe
+START = {N: None}  # the closing line runs long: start it so it ends just before 90s
 DEFAULT_LEAD = 0.45
 TAIL = 0.35      # keep this much air before the next cut
 
@@ -22,7 +24,7 @@ def duration(p):
 
 
 inputs, filters, labels = [], [], []
-for i in range(1, 11):
+for i in range(1, N + 1):
     src = HERE / 'vo' / f'scene{i:02d}.mp3'
     clip = HERE / 'vo' / f'trim{i:02d}.wav'
     trim = 'silenceremove=start_periods=1:start_threshold=-45dB'
@@ -32,10 +34,11 @@ for i in range(1, 11):
     slot = SCENES[i] - SCENES[i - 1]
     lead = LEAD.get(i, DEFAULT_LEAD)
     tempo = 1.0
-    if lead + d > slot - TAIL:
-        lead = max(0.15, slot - TAIL - d)
-        if lead + d > slot - TAIL:
-            tempo = min(1.12, d / (slot - TAIL - lead))
+    tail = TAILS.get(i, TAIL)
+    if lead + d > slot - tail:
+        lead = max(0.15, slot - tail - d)
+        if lead + d > slot - tail:
+            tempo = min(1.12, d / (slot - tail - lead))
     start = SCENES[i - 1] + lead
     if i in START and d > slot - TAIL - lead:
         tempo = min(1.06, d / (slot - TAIL - lead))
@@ -49,9 +52,9 @@ for i in range(1, 11):
     filters.append(chain)
     labels.append(f'[v{i}]')
 
-music_idx = 10
-video_idx = 11
-filters.append(f"{''.join(labels)}amix=inputs=10:normalize=0,apad=whole_dur=90,volume=1.0,asplit=2[vo][key]")
+music_idx = N
+video_idx = N + 1
+filters.append(f"{''.join(labels)}amix=inputs={N}:normalize=0,apad=whole_dur=90,volume=1.0,asplit=2[vo][key]")
 filters.append(f'[{music_idx}:a]volume=0.19[mus]')
 filters.append('[mus][key]sidechaincompress=threshold=0.03:ratio=6:attack=15:release=350[duck]')
 filters.append('[vo][duck]amix=inputs=2:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,atrim=0:90[aout]')

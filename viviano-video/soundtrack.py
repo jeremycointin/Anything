@@ -12,7 +12,7 @@ SR = 44100
 DUR = 90.0
 BEAT = 0.5
 BAR = 2.0
-CUTS = [6, 14, 24, 36, 46, 56, 66, 74, 82]
+CUTS = [6, 14, 22, 30, 40, 50, 58, 66, 74, 82]
 rng = np.random.default_rng(7)
 N = int(SR * DUR)
 L = np.zeros(N)
@@ -33,8 +33,8 @@ DARK = ['Am', 'F', 'C', 'G']
 
 def chord_at(bar):
     t = bar * BAR
-    if 14 <= t < 24:
-        return DARK[(bar - 7) % 4]
+    if 22 <= t < 30:
+        return DARK[(bar - 11) % 4]
     return MAIN[bar % 4]
 
 
@@ -142,24 +142,27 @@ for bar in range(int(DUR / BAR)):
     c = chord_at(bar)
     tones = CH[c] + [CH[c][0] + 12, CH[c][1] + 12]
     intro = t0 < 6
-    problem = 14 <= t0 < 24
-    groove = 24 <= t0 < 82
+    legacy = 14 <= t0 < 22
+    problem = 22 <= t0 < 30
+    groove = 30 <= t0 < 82
     finale = t0 >= 82
-    lift = 46 <= t0 < 66
+    lift = 50 <= t0 < 66
 
     pad(c, t0, BAR + .4, .55 if intro else (.8 if problem else 1.0))
 
     if not intro:
         for i in range(8):
-            if problem and i % 2:
+            if (problem or legacy) and i % 2:
                 continue
             pluck(tones[ARP[i]] + (36 if finale else 24), t0 + i * .25,
                   .6 if problem else (1.0 if not finale else 1.15), pan=(-.4 if i % 2 else .4))
 
     if t0 >= 14:
-        pattern = [(0, .75), (.75, .25), (1.0, .5), (1.5, .5)] if (groove or finale) else [(0, 1.0), (1.0, 1.0)]
+        # legacy holds whole-bar roots so the tagline breathes
+        pattern = ([(0, .75), (.75, .25), (1.0, .5), (1.5, .5)] if (groove or finale)
+                   else [(0, 2.0)] if legacy else [(0, 1.0), (1.0, 1.0)])
         for off, d in pattern:
-            bass(CH[c][0], t0 + off, d, .8 if problem else 1.0)
+            bass(CH[c][0], t0 + off, d, .8 if (problem or legacy) else 1.0)
 
     if 6 <= t0 < 14:
         for i in range(4):
@@ -178,10 +181,10 @@ for bar in range(int(DUR / BAR)):
         clap(t0 + 1.5, 1.0)
 
 riser(6, 3.0, .8)
-riser(24, 2.0, .7)
+riser(30, 2.0, .7)
 riser(82, 2.0, 1.0)
 for c in CUTS:
-    whoosh(c, 1.0 if c in (6, 24, 82) else .7)
+    whoosh(c, 1.0 if c in (6, 30, 82) else .7)
 
 # final sting: big C chord ringing out
 for k, n in enumerate([36, 48, 55, 60, 64, 67, 72]):

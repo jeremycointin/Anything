@@ -49,7 +49,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 .plate span{display:inline-block;background:var(--navy);color:#fff;font-size:26px;font-weight:800;letter-spacing:.06em;padding:12px 22px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.2)}
 .plate.owner span{background:var(--red)}
 /* checklist */
-.check{position:absolute;left:870px;display:flex;align-items:center;gap:24px;font-size:38px;font-weight:700;color:#fff}
+.check{position:absolute;left:900px;display:flex;align-items:center;gap:22px;font-size:36px;font-weight:700;color:#fff}
 .check .tick{width:60px;height:60px;border-radius:50%;background:var(--gold);display:grid;place-items:center;flex:none}
 /* cards */
 .card{position:absolute;width:400px;height:290px;background:#fff;border-radius:28px;box-shadow:0 18px 40px rgba(19,35,63,.12);padding:34px;display:flex;flex-direction:column;justify-content:flex-end}
@@ -69,14 +69,21 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 .line{position:absolute;left:470px;display:flex;gap:20px;align-items:flex-start;font-size:36px;font-weight:700;color:var(--ink);width:560px;line-height:1.25}
 .line i{flex:none;width:52px;height:52px;border-radius:14px;background:var(--red);display:grid;place-items:center}
 /* finale */
-#cta{position:absolute;left:0;right:0;bottom:0;height:230px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 110px;box-shadow:0 -10px 40px rgba(0,0,0,.3)}
+#cta{position:absolute;z-index:25;left:0;right:0;bottom:0;height:230px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 110px;box-shadow:0 -10px 40px rgba(0,0,0,.3)}
 #cta .btn{background:var(--red);color:#fff;font-size:50px;font-weight:900;padding:26px 50px;border-radius:999px;letter-spacing:.01em}
 #cta .ph{font-size:96px;font-weight:900;color:var(--navy);letter-spacing:-.01em;text-align:right;line-height:1}
 #cta .url{font-size:34px;font-weight:700;color:var(--red);text-align:right;margin-top:10px;letter-spacing:.04em}
 /* wipes */
 .wipe{position:absolute;top:-40px;height:1160px;width:2600px;left:0;transform:translateX(-3000px) skewX(-14deg);z-index:50}
 #wipeA{background:var(--red)} #wipeB{background:var(--navy)}
-#host{z-index:20}
+#host{z-index:20} #host2{z-index:19}
+.plate.sm{width:236px;margin-left:-118px}
+.plate.sm span{font-size:21px;padding:10px 14px;letter-spacing:.04em}
+.plate.son span{background:#1F6B4A}
+.bubble.tm::after{right:auto;left:150px}
+/* legacy */
+.tl-dot{position:absolute;top:-17px;width:44px;height:44px;margin-left:-22px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 8px rgba(232,163,61,.25)}
+.tl-lab{position:absolute;top:40px;width:300px;margin-left:-150px;text-align:center;font-size:30px;font-weight:800;color:#fff;letter-spacing:.06em}
 </style>
 </head>
 <body>
@@ -100,23 +107,42 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 <!-- 2: meet the owner -->
 <section class="scene light" id="s2" data-start="6" data-end="14">
   <div class="panes"></div>
-  <div class="abs" style="left:140px;top:250px;width:900px">
-    <div class="kicker" id="s2k">MEET THE OWNER</div>
-    <div class="h" id="s2h" style="font-size:132px;margin-top:30px">Hi, I'm <span class="red">Viviano.</span></div>
-    <div class="sub" id="s2s" style="margin-top:34px;max-width:820px">Family-owned and serving St. Louis homeowners since 1993.</div>
+  <div class="abs" style="left:120px;top:230px;width:840px">
+    <div class="kicker" id="s2k">MEET THE FAMILY</div>
+    <div class="h" id="s2h" style="font-size:128px;margin-top:26px">Meet the<br><span class="red">Vivianos.</span></div>
+    <div class="sub" id="s2s" style="margin-top:28px;max-width:800px">Robert, the owner, and his son Michael, the next generation.</div>
   </div>
-  <svg class="abs" id="s2badge" style="left:150px;top:720px" width="200" height="200" viewBox="0 0 200 200">
+  <svg class="abs" id="s2badge" style="left:130px;top:790px" width="200" height="200" viewBox="0 0 200 200">
     <defs><path id="circ" d="M100,100 m-72,0 a72,72 0 1,1 144,0 a72,72 0 1,1 -144,0"/></defs>
     <circle cx="100" cy="100" r="96" fill="#13233F"/>
     <text font-size="21" font-weight="800" fill="#E8A33D" letter-spacing="5"><textPath href="#circ">FAMILY OWNED · ST. LOUIS · </textPath></text>
     <text x="100" y="94" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">SINCE</text>
     <text x="100" y="130" text-anchor="middle" font-size="42" font-weight="900" fill="#fff">1993</text>
   </svg>
-  <div class="bubble" id="s2b" style="left:820px;top:40px">Let me show you why St. Louis trusts us with their homes!</div>
+  <div class="bubble" id="s2b" style="left:640px;top:40px">Let me show you why St. Louis trusts our family with their homes!</div>
+  <div class="plate owner" id="pr1" style="left:1250px"><span>ROBERT · OWNER</span></div>
+  <div class="plate son" id="pr2" style="left:1660px"><span>MICHAEL · NEXT GENERATION</span></div>
+</section>
+
+<!-- 2b: legacy -->
+<section class="scene dark" id="sL" data-start="14" data-end="22">
+  <div class="panes"></div>
+  <div class="abs" style="left:0;right:0;top:70px;text-align:center">
+    <div class="h" id="sLh1" style="font-size:104px">Built by One Generation.</div>
+    <div class="h gold" id="sLh2" style="font-size:104px;margin-top:10px">Carried Forward by the Next.</div>
+  </div>
+  <div class="abs" id="tl" style="left:300px;top:420px;width:1320px;height:10px">
+    <div id="tlLine" style="position:absolute;inset:0;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:5px;transform-origin:0 50%"></div>
+    <div class="tl-dot" id="tld1" style="left:0"></div><div class="tl-lab" id="tll1" style="left:0">1993</div>
+    <div class="tl-dot" id="tld2" style="left:50%"></div><div class="tl-lab" id="tll2" style="left:50%">TODAY</div>
+    <div class="tl-dot" id="tld3" style="left:100%"></div><div class="tl-lab" id="tll3" style="left:100%">NEXT GENERATION</div>
+  </div>
+  <div class="plate owner" id="pL1" style="left:700px"><span>ROBERT</span></div>
+  <div class="plate son" id="pL2" style="left:1240px"><span>MICHAEL</span></div>
 </section>
 
 <!-- 3: problem -->
-<section class="scene dark" id="s3" data-start="14" data-end="24">
+<section class="scene dark" id="s3" data-start="22" data-end="30">
   <div class="panes"></div>
   <div class="h abs" id="s3h" style="left:150px;top:110px;font-size:110px">Sound familiar?</div>
   <svg class="abs" id="oldwin" style="left:150px;top:300px" width="420" height="520" viewBox="0 0 420 520">
@@ -144,7 +170,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 </section>
 
 <!-- 4: energy efficiency -->
-<section class="scene light" id="s4" data-start="24" data-end="36">
+<section class="scene light" id="s4" data-start="30" data-end="40">
   <div class="panes"></div>
   <div class="abs" style="left:120px;top:80px">
     <div class="kicker" id="s4k">REASON 01</div>
@@ -181,29 +207,33 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 </section>
 
 <!-- 5: team -->
-<section class="scene light" id="s5" data-start="36" data-end="46">
+<section class="scene light" id="s5" data-start="40" data-end="50">
   <div class="panes"></div>
   <div class="abs" style="left:0;right:0;top:56px;text-align:center">
     <div class="kicker" id="s5k">REASON 02</div>
     <div class="h" id="s5h" style="font-size:96px;margin-top:20px">A local, <span class="red">family-owned</span> team.</div>
-    <div class="sub" id="s5s" style="margin-top:18px">Real St. Louis neighbors, from first call to final walkthrough.</div>
+    <div class="sub" id="s5s" style="margin-top:18px">Two generations of Vivianos, plus a crew that treats your home like their own.</div>
   </div>
   <div class="char" id="t2a"><img src="assets/showroom.webp"></div>
   <div class="char" id="t3a"><img src="assets/pm.webp"></div>
   <div class="char" id="t4a"><img src="assets/design.webp"></div>
   <div class="char" id="t5a"><img src="assets/installer.webp"></div>
-  <div class="plate owner" id="p1" style="left:280px"><span>THE OWNER</span></div>
-  <div class="plate" id="p2" style="left:700px"><span>SHOWROOM</span></div>
-  <div class="plate" id="p3" style="left:1040px"><span>PROJECT LEAD</span></div>
-  <div class="plate" id="p4" style="left:1380px"><span>DESIGN EXPERT</span></div>
-  <div class="plate" id="p5" style="left:1720px"><span>INSTALL PRO</span></div>
+  <div class="char" id="t6a"><img src="assets/tech.webp"></div>
+  <div class="plate sm owner" id="p1" style="left:240px"><span>OWNER</span></div>
+  <div class="plate sm son" id="p0" style="left:560px"><span>NEXT GEN</span></div>
+  <div class="plate sm" id="p2" style="left:860px"><span>SHOWROOM</span></div>
+  <div class="plate sm" id="p3" style="left:1100px"><span>PROJECT LEAD</span></div>
+  <div class="plate sm" id="p4" style="left:1340px"><span>DESIGN</span></div>
+  <div class="plate sm" id="p5" style="left:1580px"><span>INSTALLER</span></div>
+  <div class="plate sm" id="p6" style="left:1800px"><span>TECH</span></div>
 </section>
 
 <!-- 6: installation -->
-<section class="scene dark" id="s6" data-start="46" data-end="56">
+<section class="scene dark" id="s6" data-start="50" data-end="58">
   <div class="panes"></div>
   <div class="char" id="t5b"><img src="assets/installer.webp"></div>
-  <div class="abs" style="left:880px;top:100px">
+  <div class="char" id="t6b"><img src="assets/tech.webp"></div>
+  <div class="abs" style="left:900px;top:100px">
     <div class="kicker" id="s6k">REASON 03</div>
     <div class="h" id="s6h" style="font-size:88px;margin-top:22px">Expert installation,<br><span class="gold">done right.</span></div>
   </div>
@@ -215,7 +245,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 </section>
 
 <!-- 7: one roof -->
-<section class="scene light" id="s7" data-start="56" data-end="66">
+<section class="scene light" id="s7" data-start="58" data-end="66">
   <div class="panes"></div>
   <div class="abs" style="left:120px;top:70px">
     <div class="kicker" id="s7k">REASON 04</div>
@@ -225,10 +255,8 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
   <div class="card" id="g1" style="left:120px;top:340px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="8" y="6" width="48" height="52" rx="3"/><line x1="32" y1="6" x2="32" y2="58"/><line x1="8" y1="32" x2="56" y2="32"/></svg><b>Replacement Windows</b><small>Energy-efficient upgrades</small></div>
   <div class="card" id="g2" style="left:550px;top:340px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><path d="M10 58 V30 A22 22 0 0 1 54 30 V58 Z"/><line x1="32" y1="8" x2="32" y2="58"/><line x1="10" y1="36" x2="54" y2="36"/></svg><b>Custom Windows</b><small>Bays, bows &amp; unique shapes</small></div>
   <div class="card" id="g3" style="left:980px;top:340px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="14" y="4" width="36" height="56" rx="3"/><rect x="21" y="12" width="22" height="16"/><circle cx="42" cy="36" r="3" fill="#13233F"/></svg><b>Entry Doors</b><small>Steel · fiberglass · wood</small></div>
-  <div class="card" id="g4" style="left:120px;top:660px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="4" y="6" width="56" height="52" rx="3"/><line x1="32" y1="6" x2="32" y2="58"/><path d="M40 32 H52 M48 28 L52 32 L48 36"/></svg><b>Patio Doors</b><small>Sliding &amp; hinged styles</small></div>
-  <div class="card" id="g5" style="left:550px;top:660px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="6" y="6" width="52" height="18" rx="2"/><rect x="4" y="30" width="56" height="6"/><rect x="6" y="36" width="52" height="22" rx="2"/><line x1="32" y1="36" x2="32" y2="58"/><line x1="32" y1="6" x2="32" y2="24"/></svg><b>Kitchens</b><small>Cabinetry &amp; more</small></div>
-  <div class="card" id="g6" style="left:980px;top:660px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><path d="M4 26 L32 6 L60 26 V58 H4 Z"/><rect x="14" y="30" width="36" height="28"/><line x1="14" y1="37" x2="50" y2="37"/><line x1="14" y1="44" x2="50" y2="44"/><line x1="14" y1="51" x2="50" y2="51"/></svg><b>Garage Doors</b><small>Doors &amp; openers</small></div>
-  <div class="char" id="t4b"><img src="assets/design.webp"></div>
+  <div class="card" id="g4" style="left:335px;top:660px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="4" y="6" width="56" height="52" rx="3"/><line x1="32" y1="6" x2="32" y2="58"/><path d="M40 32 H52 M48 28 L52 32 L48 36"/></svg><b>Patio Doors</b><small>Sliding &amp; hinged styles</small></div>
+  <div class="card" id="g5" style="left:765px;top:660px"><span class="dot"></span><svg viewBox="0 0 64 64" fill="none" stroke="#13233F" stroke-width="4"><rect x="6" y="6" width="52" height="18" rx="2"/><rect x="4" y="30" width="56" height="6"/><rect x="6" y="36" width="52" height="22" rx="2"/><line x1="32" y1="36" x2="32" y2="58"/><line x1="32" y1="6" x2="32" y2="24"/></svg><b>Kitchens</b><small>Cabinetry &amp; more</small></div>
 </section>
 
 <!-- 8: warranty -->
@@ -243,7 +271,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
   <div class="shield" id="sh2" style="left:640px"><svg viewBox="0 0 420 440"><path d="M210 10 L390 70 V200 C390 320 300 400 210 430 C120 400 30 320 30 200 V70 Z" fill="#C0272D" stroke="#E8A33D" stroke-width="10"/></svg><div class="n">2</div><div class="t">Viviano workmanship warranty</div></div>
   <div class="fin" id="fin">+ Flexible financing available*</div>
   <div class="foot" id="foot">*Through a lending partner, subject to credit approval.</div>
-  <div class="bubble" id="s8b" style="left:1150px;top:70px">We stand behind every install.</div>
+  <div class="bubble tm" id="s8b" style="left:1170px;top:50px">We stand behind every install.</div>
 </section>
 
 <!-- 9: showroom -->
@@ -275,19 +303,21 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 <!-- 10: finale -->
 <section class="scene dark" id="s10" data-start="82" data-end="90.01">
   <div class="panes"></div>
-  <div class="abs" style="left:0;right:0;top:60px;text-align:center">
-    <div class="h" id="s10h" style="font-size:88px">Your home. <span class="gold">Our family's name on it.</span></div>
+  <div class="abs" style="left:0;right:0;top:40px;text-align:center">
+    <div class="h" id="s10h" style="font-size:80px;line-height:1.08">Built by One Generation.<br><span class="gold">Carried Forward by the Next.</span></div>
   </div>
   <div class="char" id="t2c"><img src="assets/showroom.webp"></div>
   <div class="char" id="t3c"><img src="assets/pm.webp"></div>
   <div class="char" id="t4c"><img src="assets/design.webp"></div>
   <div class="char" id="t5c"><img src="assets/installer.webp"></div>
+  <div class="char" id="t6c"><img src="assets/tech.webp"></div>
   <div id="cta">
     <div><div class="btn" id="btn">Get your FREE estimate</div></div>
     <div><div class="ph" id="ph">314-353-8350</div><div class="url" id="url">VIVIANO-INC.COM</div></div>
   </div>
 </section>
 
+<div class="char" id="host2"><img src="assets/michael.webp"></div>
 <div class="char" id="host"><img src="assets/viviano.webp"></div>
 <div class="wipe" id="wipeA"></div>
 <div class="wipe" id="wipeB"></div>
@@ -363,26 +393,39 @@ const NS='http://www.w3.org/2000/svg';
 const argon=[];for(let i=0;i<16;i++){const c=document.createElementNS(NS,'circle');c.setAttribute('r',6);c.setAttribute('fill','#7FB5D3');$('argon').append(c);argon.push(c)}
 const heat=[];for(let i=0;i<6;i++){const c=document.createElementNS(NS,'circle');c.setAttribute('r',10);c.setAttribute('fill','#E8742D');$('heat').append(c);heat.push(c)}
 
-// Viviano (host) keyframes: [time, x, y, scale, ease]
+// Host keyframes: [time, x, y, scale, ease]. Robert (host) and his son Michael (host2)
+// share screen time; y=-1000 parks a character below the frame.
 const HK=[
-  [0,1400,-1000,.95],[6.15,1400,-1000,.95],[7.0,1400,0,.95,'back'],
-  [14,1400,0,.95],[14.7,1540,0,.9],
-  [24,1540,0,.9],[24.7,1600,0,.84],
-  [36,1600,0,.84],[36.8,280,0,.82],
-  [46,280,0,.82],[46.7,1800,0,.58],
-  [55.6,1800,0,.58],[56.2,1800,-1000,.58,'in'],
-  [65.9,1500,-1000,.9],[66.8,1500,0,.9,'back'],
-  [73.6,1500,0,.9],[74.2,1500,-1000,.9,'in'],
-  [82.05,960,-1000,.86],[82.95,960,0,.86,'back'],
-  [91,960,0,.86]
+  [0,1250,-1000,.9],[6.15,1250,-1000,.9],[7.0,1250,0,.9,'back'],
+  [14,1250,0,.9],[14.7,700,0,.7],
+  [22,700,0,.7],[22.7,1540,0,.9],
+  [30,1540,0,.9],[30.7,1600,0,.84],
+  [40,1600,0,.84],[40.8,240,0,.74],
+  [50,240,0,.74],[50.6,240,-1000,.74,'in'],
+  [65.9,1380,-1000,.86],[66.8,1380,0,.86,'back'],
+  [73.6,1380,0,.86],[74.2,1380,-1000,.86,'in'],
+  [82.05,870,-1000,.8],[82.95,870,0,.8,'back'],
+  [91,870,0,.8]
 ];
-function host(t){
-  let i=0;while(i<HK.length-2&&t>HK[i+1][0])i++;
-  const a=HK[i],b=HK[i+1];const k=E[b[4]||'inOut'](clamp((t-a[0])/(b[0]-a[0])));
+const MK=[
+  [0,1660,-1000,.86],[6.6,1660,-1000,.86],[7.5,1660,0,.86,'back'],
+  [14,1660,0,.86],[14.7,1240,0,.7],
+  [22,1240,0,.7],[22.5,1240,-1000,.7,'in'],
+  [39.9,560,-1000,.72],[40.9,560,0,.72,'back'],
+  [50,560,0,.72],[50.8,1810,0,.55],
+  [58,1810,0,.55],[58.7,1660,0,.86],
+  [66,1660,0,.86],[66.7,1720,0,.82],
+  [73.6,1720,0,.82],[74.2,1720,-1000,.82,'in'],
+  [82.2,1190,-1000,.78],[83.2,1190,0,.78,'back'],
+  [91,1190,0,.78]
+];
+function host(el,K,t,seed){
+  let i=0;while(i<K.length-2&&t>K[i+1][0])i++;
+  const a=K[i],b=K[i+1];const k=E[b[4]||'inOut'](clamp((t-a[0])/(b[0]-a[0])));
   const y=lerp(a[2],b[2],k);
   // little hop while travelling sideways
   const hop=a[1]!==b[1]?Math.sin(clamp((t-a[0])/(b[0]-a[0]))*Math.PI)*120:0;
-  pose($('host'),t,{x:lerp(a[1],b[1],k),y:y+hop,s:lerp(a[3],b[3],k),o:y<-950?0:1},0);
+  pose(el,t,{x:lerp(a[1],b[1],k),y:y+hop,s:lerp(a[3],b[3],k),o:y<-950?0:1},seed);
 }
 
 const R={
@@ -399,16 +442,25 @@ s2(lt,t){
   rise($('s2k'),lt,.5);words($('s2h'),lt,.8);rise($('s2s'),lt,1.6);
   const k=p(lt,2.2,.7,E.back);set($('s2badge'),{s:k,r:(1-k)*-200+Math.sin(lt*2)*6,o:clamp((lt-2.2)*4)});
   bubble($('s2b'),lt,2.6);
+  pop($('pr1'),lt,1.4);pop($('pr2'),lt,1.9);
+},
+sL(lt,t){
+  words($('sLh1'),lt,.3,.09);words($('sLh2'),lt,1.3,.09);
+  $('tlLine').style.transform=`scaleX(${p(lt,2.2,1.6,E.inOut)})`;
+  [1,2,3].forEach(i=>{const st=2.1+(i-1)*.8;pop($('tld'+i),lt,st,.5);rise($('tll'+i),lt,st+.15,.5,20)});
+  const glow=lt>3.8?.25+.15*Math.sin((lt-3.8)*4):.25;
+  $('tld3').style.boxShadow=`0 0 0 ${8+glow*30}px rgba(232,163,61,${glow})`;
+  pop($('pL1'),lt,1.0);pop($('pL2'),lt,1.3);
 },
 s3(lt,t){
   words($('s3h'),lt,.3);
   const ow=p(lt,.6,.7,E.back);set($('oldwin'),{s:ow,o:clamp((lt-.6)*4),r:Math.sin(lt*9)*(lt>1.5?1.2:0)});
   [...$('wind').children].forEach((w,i)=>w.setAttribute('stroke-dashoffset',-lt*(260+i*60)));
   $('fog').setAttribute('opacity',.45+.2*Math.sin(lt*2));
-  ['c1','c2','c3','c4'].forEach((id,i)=>slide($(id),lt,1.4+i*.55,.55,-120));
-  rise($('s3better'),lt,5.2,.6,60);
-  $('s3line').style.transform=`scaleX(${p(lt,5.8,.6)})`;
-  bubble($('s3b'),lt,6.4);
+  ['c1','c2','c3','c4'].forEach((id,i)=>slide($(id),lt,1.1+i*.45,.5,-120));
+  rise($('s3better'),lt,4.0,.6,60);
+  $('s3line').style.transform=`scaleX(${p(lt,4.6,.6)})`;
+  bubble($('s3b'),lt,5.0);
 },
 s4(lt,t){
   rise($('s4k'),lt,.4);words($('s4h'),lt,.6,.06);
@@ -424,25 +476,25 @@ s4(lt,t){
   rise($('chart'),lt,4.4);
   $('bar1').style.transform=`scaleY(${p(lt,4.8,.8)})`;
   $('bar2').style.transform=`scaleY(${p(lt,5.6,.9,E.back)*.42})`;
-  pop($('estar'),lt,7.0);
+  pop($('estar'),lt,6.6);
 },
 s5(lt,t){
   rise($('s5k'),lt,.3);words($('s5h'),lt,.5,.06);rise($('s5s'),lt,1.3);
-  [['t2a',700],['t3a',1040],['t4a',1380],['t5a',1720]].forEach(([id,x],i)=>enter($(id),t,lt,1.6+i*.35,x,.64,i+1));
-  pop($('p1'),lt,1.2);['p2','p3','p4','p5'].forEach((id,i)=>pop($(id),lt,2.2+i*.35));
+  [['t2a',860],['t3a',1100],['t4a',1340],['t5a',1580],['t6a',1800]].forEach(([id,x],i)=>enter($(id),t,lt,1.5+i*.3,x,.56,i+1));
+  pop($('p1'),lt,1.1);pop($('p0'),lt,1.3);['p2','p3','p4','p5','p6'].forEach((id,i)=>pop($(id),lt,2.0+i*.3));
 },
 s6(lt,t){
-  const k=p(lt,.2,.8,E.back);pose($('t5b'),t,{x:lerp(-300,430,k),s:.92,r:(1-k)*-10},5);
+  const k=p(lt,.2,.8,E.back);pose($('t5b'),t,{x:lerp(-300,300,k),s:.85,r:(1-k)*-10},5);
+  const k2=p(lt,.6,.8,E.back);pose($('t6b'),t,{x:lerp(-300,650,k2),s:.78,r:(1-k2)*-10},6);
   rise($('s6k'),lt,.6);words($('s6h'),lt,.8,.07);
-  ['k1','k2','k3','k4','k5'].forEach((id,i)=>{const st=2.0+i*.75;slide($(id),lt,st,.5,80);
+  ['k1','k2','k3','k4','k5'].forEach((id,i)=>{const st=1.8+i*.65;slide($(id),lt,st,.5,80);
     const tick=$(id).querySelector('.tick');tick.style.transform=`scale(${p(lt,st+.2,.45,E.back)})`;
     tick.querySelector('path').setAttribute('stroke-dashoffset',1-p(lt,st+.4,.35))});
 },
 s7(lt,t){
   rise($('s7k'),lt,.3);words($('s7h'),lt,.5,.06);rise($('s7s'),lt,1.3);
-  ['g1','g2','g3','g4','g5','g6'].forEach((id,i)=>{const st=1.9+i*.3;const k=p(lt,st,.6,E.back);
+  ['g1','g2','g3','g4','g5'].forEach((id,i)=>{const st=1.7+i*.3;const k=p(lt,st,.6,E.back);
     set($(id),{s:k,y:Math.sin(t*2+i)*6*clamp(lt-st-.6),o:clamp((lt-st)*4)})});
-  const k=p(lt,.4,.8,E.back);pose($('t4b'),t,{x:lerp(2300,1660,k),s:.88},4);
 },
 s8(lt,t){
   rise($('s8k'),lt,.3);words($('s8h'),lt,.5,.08);
@@ -462,8 +514,8 @@ s9(lt,t){
   ['l1','l2','l3'].forEach((id,i)=>slide($(id),lt,2.4+i*.5,.55,60));
 },
 s10(lt,t){
-  words($('s10h'),lt,.9,.07);
-  [['t2c',330,1.2],['t3c',640,1.45],['t4c',1280,1.7],['t5c',1590,1.95]].forEach(([id,x,st],i)=>enter($(id),t,lt,st,x,.6,i+3));
+  words($('s10h'),lt,.6,.07);
+  [['t2c',160,1.2],['t3c',390,1.4],['t6c',610,1.6],['t4c',1470,1.8],['t5c',1720,2.0]].forEach(([id,x,st],i)=>enter($(id),t,lt,st,x,.56,i+3));
   const c=p(lt,2.2,.7,E.back);set($('cta'),{y:(1-c)*260});
   const pulse=lt>3.5?1+Math.sin((lt-3.5)*6)*.04:1;
   const bk=p(lt,2.7,.6,E.back);set($('btn'),{s:bk*pulse,o:clamp((lt-2.7)*4)});
@@ -472,11 +524,11 @@ s10(lt,t){
 };
 
 const scenes=[...document.querySelectorAll('.scene')];
-const CUTS=[6,14,24,36,46,56,66,74,82];
+const CUTS=[6,14,22,30,40,50,58,66,74,82];
 function renderAt(t){
   scenes.forEach(sc=>{const st=+sc.dataset.start,en=+sc.dataset.end;const on=t>=st&&t<en;
     sc.style.display=on?'block':'none';if(on){const lt=t-st;panes(sc,lt);R[sc.id](lt,t)}});
-  host(t);
+  host($('host'),HK,t,0);host($('host2'),MK,t,2.5);
   let a=-3000,b=-3000;
   CUTS.forEach(c=>{const d=t-c;
     if(Math.abs(d+.07)<.6)a=lerp(-2800,2300,E.inOut((d+.07+.6)/1.2));
