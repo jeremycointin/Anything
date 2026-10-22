@@ -506,14 +506,15 @@ function sBuild(lt) {
     ['WordPress', C.lime, 6.2], ['PHP', C.white, 6.35], ['JavaScript', C.lime, 6.5], ['Three.js', C.white, 6.65], ['Git', C.lime, 6.8]];
   tiles.forEach(([name, col, at], i) => {
     const c = i % 3, r = Math.floor(i / 3);
-    const x = 140 + c * 330, y = 360 + r * 124;
+    const TW = 320, x = 140 + c * 340, y = 360 + r * 124;
     const a = eBack(p(lt, at, at + 0.45));
     if (a <= 0) return;
-    ctx.save(); ctx.translate(x + 150, y + 50); ctx.scale(a, a); ctx.translate(-150, -50); ctx.globalAlpha = clamp(a);
-    rrect(0, 0, 300, 100, 16); ctx.fillStyle = 'rgba(32,32,32,0.95)'; ctx.fill();
+    ctx.save(); ctx.translate(x + TW / 2, y + 50); ctx.scale(a, a); ctx.translate(-TW / 2, -50); ctx.globalAlpha = clamp(a);
+    rrect(0, 0, TW, 100, 16); ctx.fillStyle = 'rgba(32,32,32,0.95)'; ctx.fill();
     ctx.strokeStyle = col === C.lime ? 'rgba(206,250,0,0.7)' : 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = col; ctx.beginPath(); ctx.arc(36, 50, 9, 0, Math.PI * 2); ctx.fill();
-    font(32, 700, DISP); ctx.fillStyle = C.white; ctx.textBaseline = 'middle'; ctx.fillText(name, 60, 52);
+    const fs = Math.min(32, 32 * (TW - 60 - 30) / measure(name, 32, 700));
+    font(fs, 700, DISP); ctx.fillStyle = C.white; ctx.textBaseline = 'middle'; ctx.fillText(name, 60, 52);
     ctx.restore();
   });
   // "Fast." "Clean." land on the words
